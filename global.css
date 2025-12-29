@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+.x {
+    color: rgba(0, 153, 153, 0.589);
+}
+
+
+@keyframes move {
+  from {
+    left: -100%;
+  }
+  to {
+    left: 200%;
+  }
+}
+
+.animate-move {
+  animation: move 1s infinite ease-in-out;
+}
