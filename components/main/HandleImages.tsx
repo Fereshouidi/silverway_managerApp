@@ -70,7 +70,7 @@ const HandleImages = ({
             <TouchableOpacity
                 className='w-[100px] h-[100px] flex justify-center items-center bg-gray-100 border-[2px]- border-gray-100 rounded-full mx-1'
                 style={{
-                    border: "1px solid gray"
+                    // border: "1px solid gray"
                 }}
                 onPress={ async () => {
                     try {

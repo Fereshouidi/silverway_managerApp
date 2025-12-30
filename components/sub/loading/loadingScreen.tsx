@@ -16,7 +16,7 @@ export default function LoadingScreen() {
     <View style={styles.overlay}>
       <View style={styles.center}>
 
-        <View className="w-24 h-24 bg-red-500- p-2- flex flex-1-">
+        <View className="w-24 h-24 bg-red-500- p-3 flex flex-1-">
           <LoadingIcon />
 
         </View>
@@ -55,14 +55,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.light[500],
     padding: 25,
+    paddingTop: 35,
     borderRadius: 20,
     gap: 15,
   },
   loadingText: {
     color: colors.dark[500],
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     textAlign: "center",
+    textAlignVertical: "center",
     marginTop: 10,
   },
 });

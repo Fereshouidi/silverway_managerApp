@@ -26,7 +26,7 @@ const HandleSpecifications = ({
         >
             
             {
-                updatedProduct.specifications.map((specification, index) => (
+                updatedProduct.specifications?.map((specification, index) => (
                     <CustomView 
                         key={index}
                         className='min-w-[300px] flex flex-col justify-center items-center- gap-1 mx-1 rounded-lg p-4 h-full bg-red-500- border-[0.2px] border-gray-500'
@@ -35,7 +35,7 @@ const HandleSpecifications = ({
                             className='w-12 h-12 absolute top-0 right-0 p-4 bg-red-500- rounded-full'
                             onPress={() => setUpdatedProduct({
                                 ...updatedProduct,
-                                specifications: updatedProduct.specifications.filter( spe => spe._id != specification._id)
+                                specifications: updatedProduct.specifications?.filter( spe => spe._id != specification._id)
                             })}
                         >
                             <Image
@@ -53,7 +53,7 @@ const HandleSpecifications = ({
                                 defaultValue={specification.color?? 'null'}
                                 onChange={(e) => setUpdatedProduct({
                                     ...updatedProduct,
-                                    specifications: updatedProduct.specifications.map( (spe, speIndex) => speIndex === index ? {
+                                    specifications: updatedProduct.specifications?.map( (spe, speIndex) => speIndex === index ? {
                                         ...spe,
                                         color: e.nativeEvent.text
                                     } : spe)
@@ -68,7 +68,7 @@ const HandleSpecifications = ({
                                 className='border-[0.2px] border-gray-500 px-2 flex-1 rounded-lg'
                                 onChange={(e) => setUpdatedProduct({
                                     ...updatedProduct,
-                                    specifications: updatedProduct.specifications.map( (spe, speIndex) => speIndex === index ? {
+                                    specifications: updatedProduct.specifications?.map( (spe, speIndex) => speIndex === index ? {
                                         ...spe,
                                         size: e.nativeEvent.text
                                     } : spe)
@@ -82,7 +82,7 @@ const HandleSpecifications = ({
                                 className='border-[0.2px] border-gray-500 px-2 flex-1 rounded-lg'
                                 onChange={(e) => setUpdatedProduct({
                                     ...updatedProduct,
-                                    specifications: updatedProduct.specifications.map( (spe, speIndex) => speIndex === index ? {
+                                    specifications: updatedProduct.specifications?.map( (spe, speIndex) => speIndex === index ? {
                                         ...spe,
                                         type: e.nativeEvent.text
                                     } : spe)
@@ -101,7 +101,7 @@ const HandleSpecifications = ({
                                     if (/^\d*\.?\d{0,2}$/.test(value)) {
                                         setUpdatedProduct({
                                             ...updatedProduct,
-                                            specifications: updatedProduct.specifications.map((spe, speIndex) =>
+                                            specifications: updatedProduct.specifications?.map((spe, speIndex) =>
                                                 speIndex === index 
                                                     ? { ...spe, price: value } // Keep as string to allow the decimal point
                                                     : spe
@@ -121,7 +121,7 @@ const HandleSpecifications = ({
                                     const num = value === '' ? 0 : parseInt(value, 10) || 0;
                                     setUpdatedProduct({
                                         ...updatedProduct,
-                                        specifications: updatedProduct.specifications.map( (spe, speIndex) => speIndex === index ? {
+                                        specifications: updatedProduct.specifications?.map( (spe, speIndex) => speIndex === index ? {
                                             ...spe,
                                             quantity: num
                                         } : spe)

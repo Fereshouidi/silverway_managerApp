@@ -13,8 +13,8 @@ type Props = {
     products: ProductType[], 
     setProducts: (value: ProductType[]) => void
     className?: string
-    productsSelected: ProductType[]
-    setProductsSelected: (value: ProductType[]) => void
+    productsSelected: string[]
+    setProductsSelected: (value: string[]) => void
 }
 
 

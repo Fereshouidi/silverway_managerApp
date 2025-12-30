@@ -134,7 +134,7 @@ export type OwnerInfoType = {
 }
 
 export type ProductType = {
-  _id?: string | null;
+  _id?: string;
   name: {
     fr: string | null;
     en: string | null;
@@ -201,7 +201,7 @@ export type CollectionType = {
 
 export interface PurchaseType {
   _id?: string;
-  client?: ProductType | string | null;
+  client?: ClientType | string | null;
   product?: string | null;
   evaluation?: string | null;
   specification?: ProductSpecification | string | null;
@@ -213,6 +213,17 @@ export interface PurchaseType {
   createdAt?: Date | null;
   updatedAt?: Date | null;
 }
+
+export type ClientType = {
+  _id?: string | null;
+  fullName?: string;
+  email?: string;
+  token: number;
+  phone?: number;
+  password?: string;
+  adress?: string;
+  aiNote?: string;
+};
 
 export interface OrderType {
   _id?: string;

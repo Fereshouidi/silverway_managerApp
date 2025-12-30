@@ -21,7 +21,7 @@ const LoadingIcon = ({ size: propSize, squareSize: propSquareSize }: Props) => {
 
   // 1. Calculate final dimensions only when ready or if prop is provided
   const iconSize = propSize || (layout.isReady ? Math.min(layout.width, layout.height) : 0);
-  const finalSquareSize = propSquareSize || iconSize * 0.45;
+  const finalSquareSize = propSquareSize || iconSize * 0.48;
 
   // 2. Positions are only valid if iconSize > 0
   const positions = useMemo(() => {

@@ -8,8 +8,8 @@ import { ProductType } from '@/types';
 type props = {
     searchBarActive: boolean, 
     setSearchBarActive: (value: boolean) => void
-    productsSelected: ProductType[], 
-    setProductsSelected: (value: ProductType[]) => void
+    productsSelected: string[], 
+    setProductsSelected: (value: string[]) => void
 }
 
 const TopBarForProductsPage = ({

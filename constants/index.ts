@@ -21,6 +21,7 @@ const editText = require("@/app/assets/icons/edit-text.png");
 const closeBlack = require("@/app/assets/icons/closeBlack.png");
 const trashWhite = require("@/app/assets/icons/trashWhite.png");
 const analytics = require("@/app/assets/icons/analytics.png");
+const openBoxBlack = require("@/app/assets/icons/open-box-black.png");
 
 
 
@@ -46,7 +47,8 @@ export const icons = {
     editText,
     closeBlack,
     trashWhite,
-    analytics
+    analytics,
+    openBoxBlack
 }
 
 export const colors = {

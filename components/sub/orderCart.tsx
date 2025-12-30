@@ -31,6 +31,7 @@ const OrderCart = ({
                     >{order.purchases?.slice(0, 3).map((purchase, index) => (
                         <Image
                             key={purchase._id}
+                            //@ts-ignore
                             source={{ uri: purchase.product?.thumbNail?? "" }}
                             className='w-10 h-10 rounded-full'
                             style={{marginLeft: index > 0 ? -20 : 0 }}
@@ -43,7 +44,7 @@ const OrderCart = ({
                 </View>
                 <Text 
                     className={`text-sm`}
-                >{timeAgo(order.createdAt)}</Text>
+                >{timeAgo(order.createdAt?? "")}</Text>
 
             </View>
 
@@ -83,7 +84,10 @@ const OrderCart = ({
                                 }}
                             >Call</Text> */}
                         </TouchableOpacity>
-                        <Text className='bg-red-500- text-center'>{ "+216 " + order.purchases[0]?.client?.phone?? "undefined"}</Text>
+                        <Text className='bg-red-500- text-center'>{ 
+                            //@ts-ignore
+                            "+216 " + order.purchases[0]?.client?.phone?? undefined
+                        }</Text>
                     </View>
                 </View>
 
@@ -104,7 +108,10 @@ const OrderCart = ({
                                 }}
                             >Call</Text> */}
                         </TouchableOpacity>
-                        <Text className='bg-red-500- text-center'>{ "+216 " + order.purchases[0]?.client?.phone?? "undefined"}</Text>
+                        <Text className='bg-red-500- text-center'>{ 
+                            //@ts-ignore
+                            "+216 " + order.purchases[0]?.client?.phone?? undefined
+                        }</Text>
                     </View>
                 </View>
                 

@@ -20,8 +20,8 @@ type props = {
     setSelectedProducts?: (value: ProductType[]) => void
     searchBarActive: boolean, 
     setSearchBarActive: (value: boolean) => void
-    productsSelected: ProductType[], 
-    setProductsSelected: (value: ProductType[]) => void
+    productsSelected: string[], 
+    setProductsSelected: (value: string[]) => void
 }
 
 const Products = ({
@@ -35,6 +35,9 @@ const Products = ({
 
   const [products, setProducts] = useState<ProductType[]>([]);
   const {productSectionActive, setProductSectionActive} = useProductSection();
+
+
+
    
 
   return (

@@ -2,9 +2,9 @@
 import { colors } from '@/constants'
 import { useProductSection } from '@/contexts/productTab'
 import { ProductType } from '@/types'
-import { useRouter } from 'expo-router'
-import React, { CSSProperties } from 'react'
-import { Image, Pressable, Text, TouchableOpacity, View, Platform } from 'react-native'
+import { useFocusEffect, useRouter } from 'expo-router'
+import React, { CSSProperties, useCallback, useEffect } from 'react'
+import { Image, Pressable, Text, TouchableOpacity, View, Platform, BackHandler } from 'react-native'
 import SkeletonLoading from './SkeletonLoading'
 import { handleLongText } from '@/lib'
 
@@ -12,8 +12,8 @@ type productCardType = {
     product: ProductType
     className?: String
     style?: CSSProperties
-    productsSelected: ProductType[]
-    setProductsSelected: (value: ProductType[]) => void
+    productsSelected: string[]
+    setProductsSelected: (value: string[]) => void
 }
 
 const ProductCard = ({
@@ -27,18 +27,33 @@ const ProductCard = ({
     const {setOpenProduct, setProductSectionActive} = useProductSection();
     const router = useRouter();
 
+    if (!product._id) return;
+
   return (
     <TouchableOpacity 
         className={`flex flex-col min-h-[280px] items-center gap-3 p-2 bg-red-500- overflow-hidden cursor-pointer ${className}`}
         activeOpacity={0.8}
         onPress={() => {
+
             if (!product._id) return;
+
+            if (productsSelected.length > 0) {
+                if (productsSelected.includes(product._id)) {
+                    return setProductsSelected(productsSelected.filter(productId => productId != product._id))
+                } else {
+                    return setProductsSelected([...productsSelected, product._id])
+                }
+            }
+
             router.push({ pathname: '/screens/productDetails/[id]', params: { id: product._id } })
         }}
-        onLongPress={() => setProductsSelected([...productsSelected, product._id])}
+        onLongPress={() => {
+            if (!product._id) return;
+            setProductsSelected([...productsSelected, product._id])
+        }}
         style={{
             borderRadius: 10,
-            backgroundColor: colors.light[100],
+            backgroundColor: productsSelected.includes(product._id) ? colors.light[500] : colors.light[100],
             ...Platform.select({
                 ios: {
                     shadowColor: "#0d0d0d",

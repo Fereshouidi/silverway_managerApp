@@ -20,7 +20,11 @@ export default function TabLayout() {
     const Tab = createMaterialTopTabNavigator();
     const [ activePage, setActivePage ] = useState<"products" | "collections">("products");
     const [ searchBarActive, setSearchBarActive ] = useState<boolean>(false);
-    const [ productsSelected, setProductsSelected ] = useState<ProductType[]>([]);
+    const [ productsSelected, setProductsSelected ] = useState<string[]>([]);
+
+  const handleDeleteProducts = async () => {
+    
+  }
 
 
   return (

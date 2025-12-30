@@ -12,12 +12,17 @@ import Delivered from './delivered';
 import Failed from './failed';
 import { OrderType } from '@/types';
 import { useSocket } from '@/contexts/socket';
+import { useLoadingScreen } from '@/contexts/loadingScreen';
+import axios from 'axios';
+import { backEndUrl } from '@/api';
 
 export default function TabLayout() {
   // const colorScheme = useColorScheme();
 
     const Tab = createMaterialTopTabNavigator();
     const socket = useSocket();
+    const { setLoadingScreen } = useLoadingScreen();
+
 
     const [ pendingOrders, setPendingOrders ] = useState<OrderType[]>([]);
     const [ failedOrders, setFailedOrders ] = useState<OrderType[]>([]);
@@ -28,33 +33,208 @@ export default function TabLayout() {
     const [ deliveredOrdersCount, setDeliveredOrdersCounts ] = useState<number>(0);
 
     const [ loadingFirstRender, setLoadingFirstRender ] = useState<boolean>(true);
-    const [ loadingPendingPage, setLoadingPendingPage ] = useState<boolean>(false);
+
+    // const [ loadingPendingPage, setLoadingPendingPage ] = useState<boolean>(false);
     const [ loadingFailedPage, setLoadingFailedPage ] = useState<boolean>(false);
     const [ loadingDeliveredPage, setLoadingDeliveredPage ] = useState<boolean>(false);
 
+    const [limit, setLimit] = useState<number>(1);
+
+    // const [pendingSkip, setPendingSkip] = useState<number>(limit);
+    const [failedSkip, setFailedSkip] = useState<number>(limit);
+    const [deliveredSkip, setDeliveredSkip] = useState<number>(limit);
+
 
     useEffect(() => {
-        if (!socket) return;
 
-        socket.emit("get_inational_order_batches", 10);
+        get_inational_order_batches();
 
-        socket.on("receive_order", (data: any) => {
+    }, [])
 
-            setPendingOrders(data.orders.pendingOrders);
-            setFailedOrders(data.orders.failedOrders);
-            setDeliveredOrders(data.orders.deliveredOrders);
+    // const get_inational_order_batches = async () => {
+    //     if (!socket) return;
 
-            setPendingOrdersCounts(data.pendingOrdersCount?? 0);
-            setFailedOrdersCounts(data.failedOrdersCount?? 0);
-            setDeliveredOrdersCounts(data.deliveredOrdersCount?? 0);
+    //     socket.emit("get_inational_order_batches", 10);
 
-            setLoadingFirstRender(false);
+    //     socket.on("receive_order", (data: any) => {
+
+    //         setPendingOrders(data.orders.pendingOrders);
+    //         setFailedOrders(data.orders.failedOrders);
+    //         setDeliveredOrders(data.orders.deliveredOrders);
+
+    //         setPendingOrdersCounts(data.pendingOrdersCount?? 0);
+    //         setFailedOrdersCounts(data.failedOrdersCount?? 0);
+    //         setDeliveredOrdersCounts(data.deliveredOrdersCount?? 0);
+
+    //         setLoadingFirstRender(false);
+    //     })
+
+    //     return () => {
+    //         socket.off("receive_order");
+    //     };
+    // }
+
+    // const getMorePendingOrder = async () => {
+
+    //     // setLoadingScreen(true);
+
+    //     await axios.get( backEndUrl + "/getOrdersByStatus", {
+    //         params: {
+    //             status: "pending",
+    //             limit,
+    //             skip: pendingSkip
+    //         }
+    //     })
+    //     .then(({ data }) => {
+    //         setPendingOrders([...pendingOrders, ...data.orders]);
+    //         setPendingSkip(pendingSkip + limit);
+    //     })
+    //     .catch(( err ) => {
+    //         console.log({err});
+    //     })
+    //     // setLoadingScreen(false);
+    // }
+
+    const get_inational_order_batches = async () => {
+        await axios.get( backEndUrl + "/getOrderStatusCounts" )
+        .then(({ data }) => {
+            setPendingOrdersCounts(data.pendingOrdersCount);
+            setFailedOrdersCounts(data.failedOrdersCount);
+            setDeliveredOrdersCounts(data.deliveredOrdersCount)
+        })
+    }
+
+    const getMoreFailedOrder = async () => {
+
+        setLoadingScreen(true);
+
+        await axios.get( backEndUrl + "/getOrdersByStatus", {
+            params: {
+                status: "failed",
+                limit,
+                skip: failedSkip
+            }
+        })
+        .then(({ data }) => {
+            setFailedOrders(data.orders);
+            setFailedSkip(failedSkip + limit);
+        })
+        .catch(( err ) => {
+            console.log({err});
         })
 
-        return () => {
-            socket.off("receive_order");
-        };
-    }, [socket])
+        setLoadingScreen(false);
+    }
+
+    const getMoreDeliveredOrder = async () => {
+
+        setLoadingScreen(true);
+
+        await axios.get( backEndUrl + "/getOrdersByClientAndStatus", {
+            params: {
+                status: "delivered",
+                limit,
+                skip: deliveredSkip
+            }
+        })
+        .then(({ data }) => {
+            setDeliveredOrders(data.orders);
+            setDeliveredSkip(deliveredSkip + limit);
+        })
+        .catch(( err ) => {
+            console.log({err});
+        })
+
+        setLoadingScreen(false);
+    }
+
+
+    // const getLessPendingOrders = async () => {
+
+    //     if (pendingSkip <= limit) return;
+
+    //     const newSkip = pendingSkip - limit;
+
+    //     setLoadingScreen(true);
+    //     try {
+    //         const { data } = await axios.get(backEndUrl + "/getOrdersByClientAndStatus", {
+    //             params: {
+    //                 clientId: client?._id,
+    //                 status: "pending",
+    //                 limit,
+    //                 skip: newSkip - limit
+    //             }
+    //         });
+
+    //         setOrders({
+    //             ...orders,
+    //             pendingOrders: data.orders
+    //         });
+    //         setPendingSkip(newSkip);
+    //     } catch (err) {
+    //         console.log({ err });
+    //     } finally {
+    //         setLoadingScreen(false);
+    //     }
+    // };
+
+    // const getLessFailedOrders = async () => {
+
+    //     if (failedSkip <= limit) return;
+
+    //     const newSkip = failedSkip - limit;
+
+    //     setLoadingScreen(true);
+    //     try {
+    //         const { data } = await axios.get(backEndUrl + "/getOrdersByClientAndStatus", {
+    //             params: {
+    //                 clientId: client?._id,
+    //                 status: "failed",
+    //                 limit,
+    //                 skip: newSkip - limit
+    //             }
+    //         });
+
+    //         setOrders({
+    //             ...orders,
+    //             failedOrders: data.orders
+    //         });
+    //         setFailedSkip(newSkip);
+    //     } catch (err) {
+    //         console.log({ err });
+    //     } finally {
+    //         setLoadingScreen(false);
+    //     }
+    // };
+
+    // const getLessDeliveredOrders = async () => {
+
+    //     if (deliveredSkip <= limit) return;
+
+    //     const newSkip = deliveredSkip - limit;
+
+    //     setLoadingScreen(true);
+    //     try {
+    //         const { data } = await axios.get(backEndUrl + "/getOrdersByClientAndStatus", {
+    //             params: {
+    //                 clientId: client?._id,
+    //                 status: "delivered",
+    //                 limit,
+    //                 skip: newSkip - limit
+    //             }
+    //         });
+
+    //         setOrders({
+    //             ...orders,
+    //             deliveredOrders: data.orders
+    //         });
+    //         setDeliveredSkip(newSkip);
+    //     } catch (err) {
+    //         console.log({ err });
+    //     } finally {
+    //         setLoadingScreen(false);
+    //     }
+    // };
 
     useEffect(() => {
         console.log({pendingOrdersCount});
@@ -99,21 +279,30 @@ export default function TabLayout() {
                 name="Pending"
                 options={{ title: `Pending (${pendingOrdersCount})` }}
             >
-                {() => <Pending orders={pendingOrders} />}
+                {() => <Pending 
+                    pendingOrdersCount={pendingOrdersCount}
+                    setPendingOrdersCounts={setPendingOrdersCounts}
+                />}
             </Tab.Screen>
 
             <Tab.Screen 
                 name="Failed"
                 options={{ title: `Failed (${failedOrdersCount})` }}
             >                
-                {() => <Failed orders={failedOrders} />}
+                {() => <Failed
+                    failedOrdersCount={failedOrdersCount}
+                    setFailedOrdersCounts={setFailedOrdersCounts}
+                />}
             </Tab.Screen>
 
             <Tab.Screen 
                 name="Delivered"
                 options={{ title: `Delivered (${deliveredOrdersCount})` }}
             >                
-                {() => <Delivered orders={deliveredOrders} />}
+                {() => <Delivered 
+                    deliveredOrdersCount={deliveredOrdersCount}
+                    setDeliveredOrdersCounts={setDeliveredOrdersCounts}
+                />}
             </Tab.Screen>
 
         </Tab.Navigator>
