@@ -1,31 +1,22 @@
 "use client";
 
-import React, { createContext, ReactNode, useContext, useState, CSSProperties } from "react";
+import React, { createContext, ReactNode, useContext, useState } from "react";
 
 // Context type
+export type BannerType = 'success' | 'error' | 'warning' | 'info';
+
 type StatusBannerContextType = {
   statusBannerExist: boolean;
   setStatusBanner: (
     visibility: boolean,
     text?: string | null,
-    items?: React.JSX.Element | null,
-    className?: string | null,
-    style?: CSSProperties | null,
-    contentClassName?: string | null,
-    contentStyle?: CSSProperties | null
+    type?: BannerType,
+    items?: React.ReactNode | null,
+    duration?: number
   ) => void;
   text: string | null;
-  setText: (value: string | null) => void;
-  items: React.JSX.Element | null;
-  setItems: (value: React.JSX.Element | null) => void;
-  className: string | null;
-  setClassName: (value: string | null) => void;
-  style: CSSProperties | null;
-  setStyle: (value: CSSProperties | null) => void;
-  contentClassName: string | null;
-  setContentClassName: (value: string | null) => void;
-  contentStyle: CSSProperties | null;
-  setContentStyle: (value: CSSProperties | null) => void;
+  type: BannerType;
+  items: React.ReactNode | null;
 };
 
 const StatusBannerContext = createContext<StatusBannerContextType | undefined>(undefined);
@@ -33,28 +24,31 @@ const StatusBannerContext = createContext<StatusBannerContextType | undefined>(u
 export const StatusBannerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [statusBannerExist, setStatusBannerExist] = useState<boolean>(false);
   const [text, setText] = useState<string | null>(null);
-  const [className, setClassName] = useState<string | null>(null);
-  const [style, setStyle] = useState<CSSProperties | null>(null);
-  const [contentClassName, setContentClassName] = useState<string | null>(null);
-  const [contentStyle, setContentStyle] = useState<CSSProperties | null>(null);
-  const [items, setItems] = useState<React.JSX.Element | null>(null);
+  const [type, setType] = useState<BannerType>('info');
+  const [items, setItems] = useState<React.ReactNode | null>(null);
+  const timerRef = React.useRef<any>(null);
 
   const setStatusBanner = (
     visibility: boolean,
     newText?: string | null,
-    newItems?: React.JSX.Element | null,
-    newClassName?: string | null,
-    newStyle?: CSSProperties | null,
-    newContentClassName?: string | null,
-    newContentStyle?: CSSProperties | null
+    newType: BannerType = 'info',
+    newItems: React.ReactNode | null = null,
+    duration: number = 3500
   ) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+
     setStatusBannerExist(visibility);
-    if (newText !== undefined) setText(newText);
-    if (newItems !== undefined) setItems(newItems);
-    if (newClassName !== undefined) setClassName(newClassName);
-    if (newStyle !== undefined) setStyle(newStyle);
-    if (newContentClassName !== undefined) setContentClassName(newContentClassName);
-    if (newContentStyle !== undefined) setContentStyle(newContentStyle);
+    if (visibility) {
+      if (newText !== undefined) setText(newText);
+      setType(newType);
+      setItems(newItems);
+
+      if (duration > 0) {
+        timerRef.current = setTimeout(() => {
+          setStatusBannerExist(false);
+        }, duration);
+      }
+    }
   };
 
   return (
@@ -63,17 +57,8 @@ export const StatusBannerProvider: React.FC<{ children: ReactNode }> = ({ childr
         statusBannerExist,
         setStatusBanner,
         text,
-        setText,
+        type,
         items,
-        setItems,
-        className,
-        setClassName,
-        style,
-        setStyle,
-        contentClassName,
-        setContentClassName,
-        contentStyle,
-        setContentStyle,
       }}
     >
       {children}

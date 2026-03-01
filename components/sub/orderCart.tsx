@@ -1,173 +1,154 @@
-import { colors, icons } from '@/constants'
-import { useLoadingScreen } from '@/contexts/loadingScreen'
-import { calcTotalPrice, timeAgo } from '@/lib'
-import { OrderType } from '@/types'
-import React from 'react'
-import { View, Text, Image, TouchableOpacity } from 'react-native'
+import { colors } from '@/constants'
+import { calcTotalPrice, handleCall, timeAgo } from '@/lib'
+import { DeliveryWorkerType, OrderType } from '@/types'
+import React, { memo, useMemo } from 'react'
+import { View, Text, Image, TouchableOpacity, StyleSheet, Platform } from 'react-native'
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 type props = {
-    order: OrderType
+    order: OrderType;
+    deliveryWorker: DeliveryWorkerType | undefined;
+    onPress: () => void; 
 }
 
-const OrderCart = ({
-    order
-}: props) => {
+// استخدام memo لمنع إعادة الرندرة غير الضرورية أثناء التمرير في القائمة
+const OrderCart = memo(({ order, deliveryWorker, onPress }: props) => {
+    
+    // حساب التنسيق اللوني بناءً على الحالة
+    const theme = useMemo(() => {
+        switch (order.status) {
+            case 'delivered': return { color: '#22c55e', bg: '#f0fdf4', icon: 'check-decagram' as const };
+            case 'failed': return { color: '#ef4444', bg: '#fef2f2', icon: 'alert-circle' as const };
+            default: return { color: '#f59e0b', bg: '#fffbeb', icon: 'clock-outline' as const };
+        }
+    }, [order.status]);
 
-    const { setLoadingScreen } = useLoadingScreen();
+    // حساب السعر الإجمالي مرة واحدة
+    const totalPrice = useMemo(() => 
+        (calcTotalPrice(order) + (order?.shippingCoast || 0)).toFixed(2), 
+    [order]);
 
-  return (
+    return (
         <TouchableOpacity
-            activeOpacity={0.7}
-            className='w-full min-h-[150px] flex flex-col justify-between gap-5 rounded-lg p-3'
-            style={{
-                backgroundColor: colors.light[100],
-                boxShadow: `0 5px 15px ${colors.light[200]}`
-            }}
+            activeOpacity={0.9}
+            onPress={onPress}
+            style={styles.card}
+            className="mb-4 mx-1"
         >
-            <View className='top flex flex-row justify-between items-center bg-red-500-'>
-                <View className='flex flex-row items-center justify-between- gap-5 w-fit h-10'>
-                    <View
-                        className='bg-red-500- w-20 h-full flex flex-row justify-center items-center rounded-lg'
-                    >{order.purchases?.slice(0, 3).map((purchase, index) => (
-                        <Image
-                            key={purchase._id}
-                            //@ts-ignore
-                            source={{ uri: purchase.product?.thumbNail?? "" }}
-                            className='w-10 h-10 rounded-full'
-                            style={{marginLeft: index > 0 ? -20 : 0 }}
-                        />
-                    ))}</View>
-                    <View className='flex flex-row gap-1 w-fit'>
-                        <Text className='font-semibold w-fit'>Order Num :</Text>
-                        <Text className='opacity-70 select-text w-fit'>{"#" + order.orderNumber}</Text>
+            <View className="p-4">
+                {/* Header: رقم الطلب والحالة */}
+                <View className="flex-row justify-between items-center mb-4">
+                    <View className="flex-row items-center">
+                        <View className="w-10 h-10 rounded-xl bg-gray-100 items-center justify-center mr-3">
+                            <MaterialCommunityIcons name="package-variant-closed" size={20} color={colors.dark[100]} />
+                        </View>
+                        <View>
+                            <Text className="text-dark-100 text-base font-black">#{order.orderNumber}</Text>
+                            <Text className="text-gray-400 text-[10px] font-bold">{timeAgo(order.createdAt || "")}</Text>
+                        </View>
                     </View>
-                </View>
-                <Text 
-                    className={`text-sm`}
-                >{timeAgo(order.createdAt?? "")}</Text>
-
-            </View>
-
-            <View className='middle flex flex-col gap-2 px-5'>
-
-                <View className=' min-h-8 flex flex-row justify-between gap-2'>
-                    <Text className='font-semibold'>Address : </Text>
-                    <Text >{order.address}</Text>
-                </View>
-
-                {/* <View className="flex flex-row justify-between gap-2">
-                    <Text className='font-semibold'>Products count: </Text>
-                    <Text >
-                        {order.purchases.reduce((total, p) => total + (p.quantity?? 0), 0)}
-                    </Text>
-                </View> */}
-
-                <View className=' min-h-7 flex flex-row justify-between gap-2'>
-                    <Text className='font-semibold'>Total price : </Text>
-                    <Text >{calcTotalPrice(order) + " D.T"}</Text>
-                </View>
-
-                <View className=' min-h-7 flex flex-row justify-between gap-2'>
-                    <Text className='font-semibold'>delivery worker Phone : </Text>
-                    <View className='h-full bg-red-500- flex flex-row items-center gap-2'>
-                        <TouchableOpacity
-                            className='bg-green-900 px-3 py-1 h-full flex flex-row gap-1 justify-center items-center rounded-full'
-                        >
-                            <Image
-                                source={icons.phoneWhite}
-                                className='w-3 h-3'
-                            />
-                            {/* <Text 
-                                className=' text-[12px]'
-                                style={{
-                                    color: colors.light[200]
-                                }}
-                            >Call</Text> */}
-                        </TouchableOpacity>
-                        <Text className='bg-red-500- text-center'>{ 
-                            //@ts-ignore
-                            "+216 " + order.purchases[0]?.client?.phone?? undefined
-                        }</Text>
+                    
+                    <View style={{ backgroundColor: theme.bg }} className="flex-row items-center px-3 py-1.5 rounded-lg">
+                        <MaterialCommunityIcons name={theme.icon} size={14} color={theme.color} />
+                        <Text style={{ color: theme.color }} className="ml-1.5 text-[10px] font-black uppercase tracking-tighter">
+                            {order.status}
+                        </Text>
                     </View>
                 </View>
 
-                <View className=' min-h-7 flex flex-row justify-between gap-2'>
-                    <Text className='font-semibold'>Client Phone : </Text>
-                    <View className='h-full bg-red-500- flex flex-row items-center gap-2'>
-                        <TouchableOpacity
-                            className='bg-green-900 px-3 py-1 h-full flex flex-row gap-1 justify-center items-center rounded-full'
-                        >
-                            <Image
-                                source={icons.phoneWhite}
-                                className='w-3 h-3'
-                            />
-                            {/* <Text 
-                                className=' text-[12px]'
-                                style={{
-                                    color: colors.light[200]
-                                }}
-                            >Call</Text> */}
-                        </TouchableOpacity>
-                        <Text className='bg-red-500- text-center'>{ 
-                            //@ts-ignore
-                            "+216 " + order.purchases[0]?.client?.phone?? undefined
-                        }</Text>
+                {/* Middle Section: العميل والعنوان */}
+                <View className="flex-row items-center mb-4 bg-gray-50/50 p-3 rounded-2xl border border-gray-100">
+                    <View className="flex-row mr-3">
+                        {order.purchases?.slice(0, 2).map((p, i) => (
+                            <View key={p._id} style={[styles.imageWrapper, { marginLeft: i > 0 ? -15 : 0, zIndex: 10 - i }]}>
+                                <Image 
+                                    //@ts-ignore
+                                    source={{ uri: p.product?.thumbNail }} 
+                                    className="w-9 h-9 rounded-full bg-gray-200" 
+                                />
+                            </View>
+                        ))}
+                    </View>
+                    <View className="flex-1">
+                        <Text className="text-dark-100 text-[13px] font-black" numberOfLines={1}>
+                            {/* @ts-ignore */}
+                            {order.purchases[0]?.client?.fullName || "Client Name"}
+                        </Text>
+                        <Text className="text-gray-500 text-[11px] font-medium" numberOfLines={1}>
+                            {typeof order.address === 'string' ? order.address : (order.address as any)?.en || "No Address"}
+                        </Text>
+                    </View>
+                    <View className="items-end">
+                        <Text className="text-[10px] text-gray-400 font-bold uppercase">Total</Text>
+                        <Text className="font-black text-[15px]" style={{ color: colors.dark[100] }}>
+                            {totalPrice} DT
+                        </Text>
                     </View>
                 </View>
-                
-            </View>
 
-            <View 
-                className='bottom w-full flex flex-row justify-between gap-2 bg-red-500- p-2 rounded-lg'
-            >
-                    <TouchableOpacity
-                        className='bg-red-500 p-3 flex flex-row gap-1 flex-1 justify-center items-center rounded-full'
+                {/* Footer: أزرار التواصل */}
+                <View className="flex-row gap-2">
+                    <TouchableOpacity 
+                        onPress={() => deliveryWorker?.phone && handleCall(deliveryWorker.phone.toString())}
+                        style={styles.actionBtn}
+                        className="bg-blue-50 border border-blue-100"
                     >
-                        <Image
-                            source={icons.closeWhite}
-                            className='w-3 h-3'
-                        />
-                        <Text 
-                            className=''
-                            style={{
-                                color: colors.light[200]
-                            }}
-                        >Failed</Text>
+                        <MaterialCommunityIcons name="truck-delivery-outline" size={16} color="#2563eb" />
+                        <Text className="ml-2 text-[11px] font-black text-blue-700 uppercase">Driver</Text>
                     </TouchableOpacity>
 
-                    {/* <TouchableOpacity
-                        className='bg-blue-500 p-2 flex flex-row gap-1 flex-1 justify-center items-center rounded-full'
+                    <TouchableOpacity 
+                        //@ts-ignore
+                        onPress={() => handleCall(order.purchases[0]?.client?.phone?.toString() || "")}
+                        style={styles.actionBtn}
+                        className="bg-green-50 border border-green-100"
                     >
-                        <Image
-                            source={icons.phoneWhite}
-                            className='w-4 h-4'
-                        />
-                        <Text 
-                            className=''
-                            style={{
-                                color: colors.light[200]
-                            }}
-                        >Call</Text>
-                    </TouchableOpacity> */}
-                
-                    <TouchableOpacity
-                        className='bg-green-500 p-3 flex flex-1 flex-row gap-1 justify-center items-center rounded-full'
-                    >
-                        <Text 
-                            className=''
-                            style={{
-                                color: colors.light[200]
-                            }}
-                        >Delivered</Text>
-                        <Image
-                            source={icons.checkWhite}
-                            className='w-4 h-4'
-                        />
+                        <Ionicons name="call" size={16} color="#16a34a" />
+                        <Text className="ml-2 text-[11px] font-black text-green-700 uppercase">Client</Text>
                     </TouchableOpacity>
-            </View>
 
+                    <View className="w-11 h-11 items-center justify-center rounded-xl bg-gray-900 shadow-sm shadow-black/20">
+                        <Ionicons name="chevron-forward" size={18} color="white" />
+                    </View>
+                </View>
+            </View>
         </TouchableOpacity>
-  )
-}
+    )
+});
 
-export default OrderCart
+const styles = StyleSheet.create({
+    card: { 
+        backgroundColor: 'white', 
+        borderRadius: 28, 
+        borderWidth: 1,
+        borderColor: '#f3f4f6',
+        ...Platform.select({ 
+            ios: { 
+                shadowColor: "#000", 
+                shadowOffset: { width: 0, height: 8 }, 
+                shadowOpacity: 0.04, 
+                shadowRadius: 12 
+            }, 
+            android: { 
+                elevation: 2 
+            } 
+        }) 
+    },
+    imageWrapper: { 
+        padding: 2, 
+        backgroundColor: 'white', 
+        borderRadius: 50,
+        borderWidth: 1,
+        borderColor: '#f3f4f6'
+    },
+    actionBtn: { 
+        flex: 1, 
+        height: 44, 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        borderRadius: 14 
+    }
+});
+
+export default OrderCart;

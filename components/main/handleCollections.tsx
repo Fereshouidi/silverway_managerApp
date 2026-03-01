@@ -53,7 +53,15 @@ const HandleCollections = ({
     return (
         <View className='w-full'>
 
-            <Text className='text-md font-semibold m-5'>Collections : </Text>
+            {/* <Text className='text-md font-semibold m-5'>Collections : </Text> */}
+            <View className="mb-4">
+                <Text className='text-xl font-black text-black uppercase tracking-tighter'>
+                    Collections
+                </Text>
+                <Text className='text-gray-400 text-[10px] font-bold uppercase tracking-widest'>
+                    Categorization & Visibility
+                </Text>
+            </View>
 
             <ScrollView 
                 className='w-full max-h-[250px]'

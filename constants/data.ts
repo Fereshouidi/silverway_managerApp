@@ -1,4 +1,4 @@
-import { CollectionType, ProductType } from "@/types";
+import { CollectionType, OnboardingParams, ProductType } from "@/types";
 
 export const fakeProducts = [
   {
@@ -397,3 +397,62 @@ export const newCollection = {
     type: "public",
     display: "vertical"
 } as CollectionType
+
+
+export const getOnboardingData = () => [
+  {
+    id: 0,
+    title: "Welcome to silverWay !!",
+    image: require('@/app/assets/images/logo-simple-white.jpg'),
+    description: "Here in this application \n you will be able to controll everything in the silverway website including the products, collections, and what shown in the home page",
+  },
+  {
+    id: 1,
+    title: "page 2",
+    image: require('@/app/assets/images/logo-simple-white.jpg'),
+    description: "welcome to page 2",
+  },
+  {
+    id: 2,
+    title: "page 3",
+    image: require('@/app/assets/images/logo-simple-white.jpg'),
+    description: "welcome to page 3",
+  }
+] as OnboardingParams[];
+
+export const OnboardingDataForBigBoss = [
+  {
+    id: 0,
+    title: "Welcome Mr. Wassim!",
+    image: require('@/app/assets/images/logo-simple-white.jpg'),
+    description: "As the Big Boss,\nIn this application you have full permission to control everything on the Silverway website.",
+  },
+  {
+    id: 1,
+    title: "What can you control?",
+    image: require('@/app/assets/images/logo-simple-white.jpg'),
+    description: "You can manage products, collections, and company data (logo, shipping cost, social media, etc.), as well as everything that appears on the home page (billboards, top collections, the collections shown in the sidebar, the products displayed on the home page, etc.).",
+  },
+  {
+    id: 2,
+    title: "More features",
+    image: require('@/app/assets/images/logo-simple-white.jpg'),
+    description: "In this application, you will have many powerful features such as analyzing data (sales, best-selling products, etc.) and understanding your clients' activity (their carts, their likes, and more).",
+  }
+];
+
+export const accessesDispo = [
+  , "Open Analytics page"     
+  , "Open Orders page"
+  , "Open Products page"
+  , "Open People page"
+  , "Open setting page"
+  , "Manage Products"
+  , "Manage Collections"
+  // , "Edit Prices" 
+  , "Manage Orders"
+  , "View Clients data"
+  , "View Admins data"
+  , "View delivery worker data"
+  , "Control Settings"
+]

@@ -1,165 +1,150 @@
 import { colors, icons } from '@/constants'
 import OrderCart from '@/components/sub/orderCart'
-import { OrderType } from '@/types'
-import React, { useEffect, useState } from 'react'
-import { View, Text, ScrollView, Image, RefreshControl, NativeSyntheticEvent, NativeScrollEvent } from 'react-native'
+import { DeliveryWorkerType, OrderType } from '@/types'
+import React, { useEffect, useState, useCallback } from 'react'
+import { View, Text, Image, RefreshControl, FlatList, ActivityIndicator, Platform } from 'react-native'
 import LoadingIcon from '@/components/sub/loading/loadingIcon'
 import axios from 'axios'
 import { backEndUrl } from '@/api'
-import { useLoadingScreen } from '@/contexts/loadingScreen'
 
 type props = {
     deliveredOrdersCount: number, 
     setDeliveredOrdersCounts: (value: number) => void
+    deliveryWorker?: DeliveryWorkerType, 
+    setDeliveryWorker?: (value: DeliveryWorkerType) => void
+    onOrderPress: (order: OrderType) => void
 }
 
 const Delivered = ({
     deliveredOrdersCount,
-    setDeliveredOrdersCounts
+    setDeliveredOrdersCounts,
+    deliveryWorker,
+    onOrderPress
 }: props) => {
 
     const [refreshing, setRefreshing] = useState<boolean>(false);
-    const [ loadingDeliveredPage, setLoadingDeliveredPage ] = useState<boolean>(false);
-    const [limit, setLimit] = useState<number>(10);
+    const [loadingMore, setLoadingMore] = useState<boolean>(false);
+    const [initialLoading, setInitialLoading] = useState<boolean>(true);
     const [deliveredSkip, setDeliveredSkip] = useState<number>(0);
-    const [ deliveredOrders, setDeliveredOrders ] = useState<OrderType[]>([]);
-    const { setLoadingScreen } = useLoadingScreen();
+    const [deliveredOrders, setDeliveredOrders] = useState<OrderType[]>([]);
+    const limit = 10;
 
-    const getMoreDeliveredOrder = async () => {
-
-        setLoadingDeliveredPage(true);
-
-        await axios.get( backEndUrl + "/getOrdersByStatus", {
-            params: {
-                status: "delivered",
-                limit,
-                skip: deliveredSkip
-            }
-        })
-        .then(({ data }) => {
-            setDeliveredOrders([...deliveredOrders, ...data.orders]);
-            setDeliveredOrdersCounts(data.ordersCount)
-            setDeliveredSkip(deliveredSkip + limit);
-        })
-        .catch(( err ) => {
-            console.log({err});
-        })
-        
-        setLoadingDeliveredPage(false);
-    }
-
+    // جلب البيانات الأولية
     const handleRefresh = async () => {
-
         setRefreshing(true);
-
-        await axios.get( backEndUrl + "/getOrdersByStatus", {
-            params: {
-                status: "delivered",
-                limit: 4,
-                skip: 0
-            }
-        })
-        .then(({ data }) => {
+        try {
+            const { data } = await axios.get(`${backEndUrl}/getOrdersByStatus`, {
+                params: { status: "delivered", limit: 10, skip: 0 }
+            });
             setDeliveredOrders(data.orders);
-            setDeliveredOrdersCounts(data.ordersCount)
-            setDeliveredSkip(4);
-        })
-        .catch(( err ) => {
-            console.log({err});
-        })
-
-        setRefreshing(false);
-        
-    }
-    
-    const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-        const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-        const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
-
-        if (isCloseToBottom && deliveredOrders.length > deliveredOrdersCount) {
-            getMoreDeliveredOrder();
+            setDeliveredOrdersCounts(data.ordersCount);
+            setDeliveredSkip(10);
+        } catch (err) {
+            console.log("Delivered Refresh Err:", err);
+        } finally {
+            setRefreshing(false);
+            setInitialLoading(false);
         }
     };
 
-    useEffect (() => {
-        // setLoadingScreen(true);
-        handleRefresh();
-        // setLoadingScreen(false);
-    }, [])
+    // جلب المزيد من الطلبات المستلمة
+    const getMoreDeliveredOrder = async () => {
+        if (loadingMore || deliveredOrders.length >= deliveredOrdersCount) return;
+
+        setLoadingMore(true);
+        try {
+            const { data } = await axios.get(`${backEndUrl}/getOrdersByStatus`, {
+                params: { status: "delivered", limit, skip: deliveredSkip }
+            });
+            setDeliveredOrders(prev => [...prev, ...data.orders]);
+            setDeliveredSkip(prev => prev + limit);
+        } catch (err) {
+            console.log("Delivered Load More Err:", err);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
 
     useEffect(() => {
-        console.log(deliveredOrders.length , deliveredOrdersCount);
-        
-        if (deliveredOrdersCount != 0 && deliveredOrders.length != deliveredOrdersCount) {
-            setLoadingDeliveredPage(true)
-        } else {
-            setLoadingDeliveredPage(false)
-        }
-        
-    }, [deliveredOrders.length])
+        handleRefresh();
+    }, []);
 
-  return (
-    <View
-        style={{
-            height: "100%",
-            backgroundColor: colors.light[100],
-        }}
-    >
+    const renderItem = useCallback(({ item }: { item: OrderType }) => (
+        <OrderCart 
+            order={item}
+            deliveryWorker={deliveryWorker!}
+            onPress={() => onOrderPress(item)}
+        />
+    ), [deliveryWorker, onOrderPress]);
 
-      <ScrollView
-        contentContainerStyle={{
-          padding: 10,
-          paddingBottom: 100,
-          flexDirection: "column",
-          // justifyContent: "center",
-          gap: 5,
-        }}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        refreshControl={
-          <RefreshControl 
-              refreshing={refreshing} 
-              onRefresh={handleRefresh}
-              colors={[colors.dark[200]]} // Android
-              tintColor={colors.dark[200]} // iOS
-              title={'loading...'}
-              titleColor={'#000'}
-          />
-        }
-      >
-  
-        {
-          deliveredOrders.length == 0 ?
-            <View 
-                className='w-full h-full flex justify-center items-center bg-red-500- py-[200px] gap-5 opacity-50'
-                style={{
-                // paddingBottom: 200
-                }}
-            >
-                <Image
-                source={icons.openBoxBlack}
-                className='w-32 h-32'
+    // واجهة التحميل الوهمي (Skeleton)
+    const renderSkeleton = () => (
+        <View className="p-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <View key={i} className="w-full h-48 bg-gray-100 rounded-[35px] mb-6 animate-pulse" />
+            ))}
+        </View>
+    );
+
+    if (!deliveryWorker) return null;
+
+    return (
+        <View style={{ flex: 1, backgroundColor: colors.light[100] }}>
+            {initialLoading && deliveredOrders.length === 0 ? (
+                renderSkeleton()
+            ) : (
+                <FlatList
+                    data={deliveredOrders}
+                    renderItem={renderItem}
+                    keyExtractor={(item, index) => item._id || index.toString()}
+                    contentContainerStyle={{ paddingVertical: 10, paddingBottom: 120 }}
+                    onEndReached={getMoreDeliveredOrder}
+                    onEndReachedThreshold={0.3}
+                    className='px-2'
+                    refreshControl={
+                        <RefreshControl 
+                            refreshing={refreshing} 
+                            onRefresh={handleRefresh}
+                            colors={[colors.dark[100]]}
+                            tintColor={colors.dark[100]}
+                        />
+                    }
+                    ListEmptyComponent={() => (
+                        <View className='w-full items-center py-40 opacity-30'>
+                            <Image source={icons.openBoxBlack} className='w-24 h-24' />
+                            <Text className="mt-4 font-black tracking-widest text-[10px] uppercase">
+                                No delivered orders yet
+                            </Text>
+                        </View>
+                    )}
+                    ListFooterComponent={() => (
+                        <View style={{ height: 100, justifyContent: 'center', alignItems: 'center' }}>
+                            {loadingMore ? (
+                                <View className="flex-row items-center bg-white px-5 py-2.5 rounded-2xl border border-gray-100 shadow-sm">
+                                    <ActivityIndicator size="small" color={colors.dark[100]} />
+                                    <Text className="ml-3 text-[10px] font-black text-gray-400 uppercase tracking-[2px]">
+                                        Loading History...
+                                    </Text>
+                                </View>
+                            ) : deliveredOrders.length > 0 && (
+                                <View className="items-center">
+                                    <View className="w-1 h-1 bg-gray-300 rounded-full mb-2" />
+                                    <Text className="text-[9px] font-bold text-gray-300 uppercase tracking-widest">
+                                        End of delivered history
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                    )}
+                    // تحسينات الأداء
+                    removeClippedSubviews={Platform.OS === 'android'}
+                    initialNumToRender={8}
+                    maxToRenderPerBatch={10}
+                    windowSize={5}
                 />
-                <Text>there is no failed order !</Text>
-            </View>
-          :
-
-            deliveredOrders.map((order, index) => (
-                <OrderCart 
-                    key={index}
-                    order={order}
-                />
-            ))
-        }
-          
-        {loadingDeliveredPage && <View className='w-full h-10 flex justify-center items-center my-5'>
-            <LoadingIcon/>
-        </View>}
-
-      </ScrollView>
-
-    </View>
-  )
+            )}
+        </View>
+    )
 }
 
-export default Delivered
+export default Delivered;

@@ -22,6 +22,7 @@ const closeBlack = require("@/app/assets/icons/closeBlack.png");
 const trashWhite = require("@/app/assets/icons/trashWhite.png");
 const analytics = require("@/app/assets/icons/analytics.png");
 const openBoxBlack = require("@/app/assets/icons/open-box-black.png");
+const userWhite = require("@/app/assets/icons/user-white.png");
 
 
 
@@ -48,7 +49,8 @@ export const icons = {
     closeBlack,
     trashWhite,
     analytics,
-    openBoxBlack
+    openBoxBlack,
+    userWhite
 }
 
 export const colors = {

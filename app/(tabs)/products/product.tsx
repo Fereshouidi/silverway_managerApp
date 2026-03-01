@@ -1,12 +1,10 @@
+import PorductsList from '@/components/main/PorductsList/PorductsList';
+import SearchBar from '@/components/sub/searchBar';
 import { colors } from '@/constants';
 import { useProductSection } from '@/contexts/productTab';
-import PorductsList from '@/components/main/PorductsList';
-import SearchBar from '@/components/sub/searchBar';
-import MoreBotton from '@/components/sub/skipButton';
-import TopBar from '@/components/sub/topBars/Products';
 import { ProductType } from '@/types';
-import React, { CSSProperties, useState } from 'react';
-import { Platform, View } from 'react-native';
+import React, { CSSProperties } from 'react';
+import { View } from 'react-native';
 
 type props = {
     productSectionVisible?: boolean
@@ -22,6 +20,8 @@ type props = {
     setSearchBarActive: (value: boolean) => void
     productsSelected: string[], 
     setProductsSelected: (value: string[]) => void
+    products: ProductType[],
+    setProducts: (value: ProductType[]) => void
 }
 
 const Products = ({
@@ -30,15 +30,13 @@ const Products = ({
   searchBarActive,
   setSearchBarActive,
   productsSelected, 
-  setProductsSelected
+  setProductsSelected,
+  products, 
+  setProducts,
 }: props) => {
 
-  const [products, setProducts] = useState<ProductType[]>([]);
   const {productSectionActive, setProductSectionActive} = useProductSection();
 
-
-
-   
 
   return (
     <View 
@@ -60,7 +58,9 @@ const Products = ({
           // top: searchBarActive ? 100 : ""
         }}
       >
-        <SearchBar/>
+        <SearchBar
+          setProducts={setProducts}
+        />
       </View>
 
       <PorductsList

@@ -1,167 +1,142 @@
 import { colors, icons } from '@/constants'
 import OrderCart from '@/components/sub/orderCart'
-import { OrderType } from '@/types'
-import React, { useEffect, useState } from 'react'
-import { View, Text, ScrollView, Image, RefreshControl, NativeSyntheticEvent, NativeScrollEvent } from 'react-native'
+import { DeliveryWorkerType, OrderType } from '@/types'
+import React, { useEffect, useState, useCallback } from 'react'
+import { View, Text, Image, RefreshControl, FlatList, ActivityIndicator, Platform } from 'react-native'
 import LoadingIcon from '@/components/sub/loading/loadingIcon'
 import axios from 'axios'
 import { backEndUrl } from '@/api'
-import { useLoadingScreen } from '@/contexts/loadingScreen'
 
 type props = {
     failedOrdersCount: number, 
     setFailedOrdersCounts: (value: number) => void
+    deliveryWorker?: DeliveryWorkerType, 
+    setDeliveryWorker?: (value: DeliveryWorkerType) => void
+    onOrderPress: (order: OrderType) => void
 }
 
 const Failed = ({
     failedOrdersCount,
-    setFailedOrdersCounts
+    setFailedOrdersCounts,
+    deliveryWorker,
+    onOrderPress
 }: props) => {
 
     const [refreshing, setRefreshing] = useState<boolean>(false);
-    const [ loadingFailedPage, setLoadingFailedPage ] = useState<boolean>(false);
-    const [limit, setLimit] = useState<number>(10);
+    const [loadingMore, setLoadingMore] = useState<boolean>(false);
+    const [initialLoading, setInitialLoading] = useState<boolean>(true);
     const [failedSkip, setFailedSkip] = useState<number>(0);
-    const [ failedOrders, setFailedOrders ] = useState<OrderType[]>([]);
-    const { setLoadingScreen } = useLoadingScreen();
-
-    const getMoreFailedOrder = async () => {
-
-        if (failedOrders.length !< failedOrdersCount) return;
-
-        setLoadingFailedPage(true);
-
-        await axios.get( backEndUrl + "/getOrdersByStatus", {
-            params: {
-                status: "failed",
-                limit,
-                skip: failedOrders
-            }
-        })
-        .then(({ data }) => {
-            setFailedOrders([...failedOrders, ...data.orders]);
-            setFailedOrdersCounts(data.ordersCount)
-            setFailedSkip(failedSkip + limit);
-        })
-        .catch(( err ) => {
-            console.log({err});
-        })
-        
-        setLoadingFailedPage(false);
-    }
+    const [failedOrders, setFailedOrders] = useState<OrderType[]>([]);
+    const limit = 10;
 
     const handleRefresh = async () => {
-
         setRefreshing(true);
-
-        await axios.get( backEndUrl + "/getOrdersByStatus", {
-            params: {
-                status: "failed",
-                limit: 4,
-                skip: 0
-            }
-        })
-        .then(({ data }) => {
+        try {
+            const { data } = await axios.get(`${backEndUrl}/getOrdersByStatus`, {
+                params: { status: "failed", limit: 10, skip: 0 }
+            });
             setFailedOrders(data.orders);
             setFailedOrdersCounts(data.ordersCount);
-            setFailedSkip(4);
-        })
-        .catch(( err ) => {
-            console.log({err});
-        })
-
-        setRefreshing(false);
-        
-    }
-    
-    const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-        const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-        const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
-
-        if (isCloseToBottom) {
-            getMoreFailedOrder();
+            setFailedSkip(10);
+        } catch (err) {
+            console.log("Failed Refresh Err:", err);
+        } finally {
+            setRefreshing(false);
+            setInitialLoading(false);
         }
     };
 
-    useEffect (() => {
-        setLoadingScreen(true);
-        handleRefresh();
-        setLoadingScreen(false);
-    }, [])
+    const getMoreFailedOrder = async () => {
+        if (loadingMore || failedOrders.length >= failedOrdersCount) return;
+
+        setLoadingMore(true);
+        try {
+            const { data } = await axios.get(`${backEndUrl}/getOrdersByStatus`, {
+                params: { status: "failed", limit, skip: failedSkip }
+            });
+            setFailedOrders(prev => [...prev, ...data.orders]);
+            setFailedSkip(prev => prev + limit);
+        } catch (err) {
+            console.log("Failed Load More Err:", err);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
 
     useEffect(() => {
-        console.log(failedOrders.length < failedOrdersCount && failedOrdersCount != 0);
-        
-        if (failedOrders.length < failedOrdersCount) {
-            setLoadingFailedPage(true)
-        } else {
-            setLoadingFailedPage(false)
-        }
-        
-    }, [failedOrders.length])
+        handleRefresh();
+    }, []);
 
-  return (
-    <View
-        style={{
-            height: "100%",
-            backgroundColor: colors.light[100],
-        }}
-    >
+    const renderItem = useCallback(({ item }: { item: OrderType }) => (
+        <OrderCart 
+            order={item}
+            deliveryWorker={deliveryWorker!}
+            onPress={() => onOrderPress(item)}
+        />
+    ), [deliveryWorker, onOrderPress]);
 
-      <ScrollView
-        contentContainerStyle={{
-          padding: 10,
-          paddingBottom: 100,
-          flexDirection: "column",
-          // justifyContent: "center",
-          gap: 5,
-        }}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        refreshControl={
-          <RefreshControl 
-              refreshing={refreshing} 
-              onRefresh={handleRefresh}
-              colors={[colors.dark[200]]} // Android
-              tintColor={colors.dark[200]} // iOS
-              title={'loading...'}
-              titleColor={'#000'}
-          />
-        }
-      >
-  
-        {
-          failedOrders.length == 0 ?
-            <View 
-                className='w-full h-full flex justify-center items-center bg-red-500- py-[200px] gap-5 opacity-50'
-                style={{
-                // paddingBottom: 200
-                }}
-            >
-                <Image
-                source={icons.openBoxBlack}
-                className='w-32 h-32'
+    const renderSkeleton = () => (
+        <View className="p-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <View key={i} className="w-full h-44 bg-gray-50 rounded-[35px] mb-6 animate-pulse border border-gray-100" />
+            ))}
+        </View>
+    );
+
+    if (!deliveryWorker) return null;
+
+    return (
+        <View style={{ flex: 1, backgroundColor: colors.light[100] }}>
+            {initialLoading && failedOrders.length === 0 ? (
+                renderSkeleton()
+            ) : (
+                <FlatList
+                    data={failedOrders}
+                    renderItem={renderItem}
+                    keyExtractor={(item, index) => item._id || index.toString()}
+                    contentContainerStyle={{ paddingVertical: 10, paddingBottom: 120 }}
+                    onEndReached={getMoreFailedOrder}
+                    onEndReachedThreshold={0.3}
+                    className='px-2'
+                    refreshControl={
+                        <RefreshControl 
+                            refreshing={refreshing} 
+                            onRefresh={handleRefresh}
+                            colors={[colors.dark[100]]}
+                            tintColor={colors.dark[100]}
+                        />
+                    }
+                    ListEmptyComponent={() => (
+                        <View className='w-full items-center py-40 opacity-20'>
+                            <Image source={icons.openBoxBlack} className='w-24 h-24' />
+                            <Text className="mt-4 font-black text-[10px] uppercase tracking-[3px]">
+                                No failed orders found
+                            </Text>
+                        </View>
+                    )}
+                    ListFooterComponent={() => (
+                        <View style={{ height: 100, justifyContent: 'center', alignItems: 'center' }}>
+                            {loadingMore ? (
+                                <View className="bg-white px-5 py-3 rounded-2xl shadow-sm border border-gray-50 flex-row items-center">
+                                    <ActivityIndicator size="small" color={colors.dark[100]} />
+                                    <Text className="ml-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                        Loading more failed...
+                                    </Text>
+                                </View>
+                            ) : failedOrders.length > 0 && (
+                                <Text className="text-[9px] font-bold text-gray-200 uppercase">
+                                    — End of List —
+                                </Text>
+                            )}
+                        </View>
+                    )}
+                    removeClippedSubviews={Platform.OS === 'android'}
+                    initialNumToRender={10}
+                    windowSize={5}
                 />
-                <Text>there is no failed order !</Text>
-            </View>
-          :
-
-            failedOrders.map((order, index) => (
-                <OrderCart 
-                    key={index}
-                    order={order}
-                />
-            ))
-        }
-          
-        {loadingFailedPage && <View className='w-full h-10 flex justify-center items-center my-5'>
-            <LoadingIcon/>
-        </View>}
-
-      </ScrollView>
-
-    </View>
-  )
+            )}
+        </View>
+    )
 }
 
-export default Failed
+export default Failed;

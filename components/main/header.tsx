@@ -1,6 +1,7 @@
-import { colors, icons } from '@/constants'
+import { colors } from '@/constants'
 import React from 'react'
-import { GestureResponderEvent, Image, StyleProp, Text, TouchableOpacity, View, ViewStyle } from 'react-native'
+import { GestureResponderEvent, StyleProp, Text, TouchableOpacity, View, ViewStyle } from 'react-native'
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 type HeaderProps = {
     onBackButtonPress?: (event: GestureResponderEvent) => void
@@ -18,34 +19,44 @@ const Header = ({
     items
 }: HeaderProps) => {
 
-
   return (
     <View 
-        className={`relative- w-full h-[60px] flex flex-row justify-center items-center ${className}`}
+        className={`w-full h-16 flex-row items-center px-4 ${className}`}
         style={[{ backgroundColor: colors.light[100] }, style]}
     >
-
-        {onBackButtonPress && <TouchableOpacity 
-            className='w-[60px] h-full absolute left-0 flex justify-center items-center'
-            onPress={onBackButtonPress}
-        >
-            <Image
-                source={icons.back}
-                className='w-6 h-6'
-
-            />
-        </TouchableOpacity>}
-
-
-        <View className='max-w-[60%] h-full absolute left-[50%] translate-x-[-50%] flex justify-center items-center'>
-            <Text className='text-center text-lg font-semibold'>{title}</Text>
-
+        {/* الجهة اليسرى: زر الرجوع */}
+        <View className="w-10">
+            {onBackButtonPress && (
+                <TouchableOpacity 
+                    className='w-10 h-10 flex justify-center items-center rounded-full'
+                    onPress={onBackButtonPress}
+                    style={{ backgroundColor: colors.light[200] }}
+                    activeOpacity={0.7}
+                >
+                    <MaterialCommunityIcons 
+                        name="chevron-left" 
+                        size={28} 
+                        color={colors.dark[100]} 
+                    />
+                </TouchableOpacity>
+            )}
         </View>
 
-        <View className='absolute right-2'>
+        {/* المنتصف: العنوان */}
+        <View className='flex-1 items-center justify-center'>
+            <Text 
+                className='text-lg font-bold' 
+                numberOfLines={1}
+                style={{ color: colors.dark[100] }}
+            >
+                {title}
+            </Text>
+        </View>
+
+        {/* الجهة اليمنى: العناصر الإضافية */}
+        <View className='min-w-[40px] flex-row justify-end items-center'>
             {items}
         </View>
-
     </View>
   )
 }

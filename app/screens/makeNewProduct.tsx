@@ -1,331 +1,249 @@
-import { backEndUrl } from '@/api'
-import { colors, icons } from '@/constants'
-import { fakeProducts } from '@/constants/data'
-import { useLoadingScreen } from '@/contexts/loadingScreen'
-import { useProductSection } from '@/contexts/productTab'
-import { pickImage } from '@/lib'
-import HandleCollections from '@/components/main/handleCollections'
-import HandleImages from '@/components/main/HandleImages'
-import HandleSpecifications from '@/components/main/handleSpecifications'
-import Header from '@/components/main/header'
-import ProductStatistics from '@/components/main/productStatistics'
-import SkeletonLoading from '@/components/sub/SkeletonLoading'
-import { CollectionType, ProductToEditType, ProductType } from '@/types'
-import axios from 'axios'
-import { router, Stack } from 'expo-router'
-import React, { useEffect, useState } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, Image, TextInput } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+"use client";
+import { backEndUrl } from '@/api';
+import HandleCollections from '@/components/main/handleCollections';
+import HandleImages from '@/components/main/HandleImages';
+import HandleSpecifications from '@/components/main/handleSpecifications';
+import Header from '@/components/main/header';
+import { colors, icons } from '@/constants';
+import { useAdmin } from '@/contexts/admin';
+import { useLoadingScreen } from '@/contexts/loadingScreen';
+import { useStatusBanner } from '@/contexts/StatusBanner';
+import { pickImage } from '@/lib';
+import { ProductToEditType } from '@/types';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import axios from 'axios';
 import * as ImageManipulator from 'expo-image-manipulator';
+import { router, Stack } from 'expo-router';
+import React, { useState } from 'react';
+import { Image, Keyboard, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const MakeNewProduct = () => {
-
-    const { productSectionActive } = useProductSection();
-
-    const [product, setProduct] = useState<ProductType>(fakeProducts[0]);
-    const [allCollections, setAllCollections] = useState<CollectionType[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
     const { setLoadingScreen } = useLoadingScreen();
+    const { admin } = useAdmin();
+    const { setStatusBanner } = useStatusBanner();
+
     const [updatedProduct, setUpdatedProduct] = useState<ProductToEditType>({
-            ...product,
-            price: product.price?.toString()?? '',
-            specifications: product.specifications?.map(spec => ({
-                ...spec,
-                price: spec.price?.toString()?? 'p'
-            }))?? []
-        });
-
-    useEffect(() => {
-        setUpdatedProduct({
-            ...product,
-            price: product.price?.toString()?? '',
-            specifications: product.specifications?.map(spec => ({
-                ...spec,
-                price: spec.price?.toString()?? 'a'
-            }))?? []
-        })
-    }, [product])
-
-
-const handleConfirm = async () => {
-
-    if (!updatedProduct.name.en || !updatedProduct.description.en || !updatedProduct.thumbNail || !updatedProduct.price) {
-        alert("Please fill in all required fields: Name, Description, Thumbnail, and Price.");
-        return;
-    }
-    setLoadingScreen(true)
-  try {
-    const formData = new FormData();
-
-    formData.append(
-      "thumbnail",
-      {
-        uri: updatedProduct.thumbNail,
-        type: "image/jpeg",
-        name: "thumbnail.jpg",
-      } as any
-    );
-
-    updatedProduct.images.forEach((imgUri, index) => {
-      formData.append(
-        "images",
-        {
-          uri: imgUri,
-          type: "image/jpeg",
-          name: `image_${index}.jpg`,
-        } as any
-      );
+        //@ts-ignore
+        name: { fr: "" },
+        //@ts-ignore
+        description: { fr: "" },
+        price: "",
+        thumbNail: "",
+        images: [],
+        specifications: [],
+        collections: [] // ستبدأ كمصفوفة فارغة وتُملأ بـ IDs نصوص
     });
 
-    formData.append("price", updatedProduct.price || "0");
-    formData.append("nameEn", updatedProduct.name.en || "");
-    formData.append("descriptionEn", updatedProduct.description.en || "");
+    const handleConfirm = async () => {
+        if (!admin?.accesses?.includes("Manage Products")) {
+            setStatusBanner(true, "You don't have permission to create products", "error");
+            return;
+        }
+        // التحقق من الحقول الأساسية
+        if (!updatedProduct.name.fr || !updatedProduct.price || !updatedProduct.thumbNail) {
+            setStatusBanner(true, "Please fill in required fields: Name, Price, and Thumbnail.", "warning");
+            return;
+        }
 
-    // Collections (array) → تحويل إلى JSON string
-    formData.append("collections", JSON.stringify(updatedProduct.collections || []));
+        Keyboard.dismiss();
+        setLoadingScreen(true, "Creating Product...");
 
-    // Specifications (array of objects) → تحويل إلى JSON string
-    const cleanedSpecifications = (updatedProduct.specifications || []).map(
-        ({ _id, price, ...rest }) => ({
-            ...rest,
-            price: parseFloat(price?? "0")
-        })
-    );
+        try {
+            const formData = new FormData();
+            const newImagesSpecsData: any[] = [];
 
-    formData.append(
-        "specifications",
-        JSON.stringify(cleanedSpecifications)
-    );
+            // 1. معالجة الـ Thumbnail
+            formData.append("thumbnail", {
+                uri: updatedProduct.thumbNail,
+                type: "image/jpeg",
+                name: "thumbnail.jpg",
+            } as any);
 
+            // 2. معالجة الصور الإضافية والربط بالمواصفات
+            updatedProduct.images.forEach((img, index) => {
+                //@ts-ignore
+                const uri = typeof img === 'string' ? img : img.uri;
 
+                // استخراج الـ ID المرتبط بالصورة حالياً
+                const currentImgSpecId = typeof img === 'object' ? (img as any).specification : null;
 
+                // البحث عن المواصفة في المصفوفة لاستخراج لونها وحجمها ليربطها السيرفر
+                const linkedSpec = updatedProduct.specifications.find(s =>
+                    s._id?.toString() === (typeof currentImgSpecId === 'object' ? currentImgSpecId?._id : currentImgSpecId)?.toString()
+                );
 
-    await axios.post(backEndUrl + "/addProduct", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+                const specProps = linkedSpec ? {
+                    color: linkedSpec.color?.trim(),
+                    size: linkedSpec.size?.trim()
+                } : null;
 
-    router.back();
-    alert("the product has been added successfully! ✅");
+                newImagesSpecsData.push(specProps);
 
-  } catch (err) {
-    console.error(err);
-    alert("something went wrong while adding the product ! ❌");
-  }
+                formData.append("images", {
+                    uri: uri,
+                    type: "image/jpeg",
+                    name: `image_${Date.now()}_${index}.jpg`,
+                } as any);
+            });
 
-  setLoadingScreen(false)
+            // 3. إرسال خريطة الربط والبيانات النصية
+            formData.append("newImagesSpecsData", JSON.stringify(newImagesSpecsData));
+            formData.append("nameFr", updatedProduct.name.fr);
+            formData.append("price", updatedProduct.price.toString());
+            formData.append("descriptionFr", updatedProduct.description?.fr || "");
 
-};
+            // 4. تنظيف المواصفات (إرسال الخصائص فقط بدون IDs مؤقتة)
+            const cleanedSpecs = (updatedProduct.specifications || []).map((spec) => {
+                const { _id, ...rest } = spec as any;
+                return {
+                    ...rest,
+                    price: parseFloat(rest.price?.toString() || "0"),
+                    quantity: parseInt(rest.quantity?.toString() || "0")
+                };
+            });
+            formData.append("specifications", JSON.stringify(cleanedSpecs));
 
-    useEffect(() => {
-        console.log(JSON.stringify(updatedProduct, null, 2));
-        
-    }, [updatedProduct])
+            // 5. المجموعات - التأكد من إرسال الـ IDs فقط (الحل الجوهري)
+            const collectionIds = (updatedProduct.collections || []).map((col: any) =>
+                typeof col === 'string' ? col : col._id
+            ).filter(Boolean);
 
+            formData.append("collections", JSON.stringify(collectionIds));
+
+            // 6. الطلب للسيرفر
+            const response = await axios.post(`${backEndUrl}/addProduct`, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+
+            if (response.status === 201 || response.status === 200) {
+                setStatusBanner(true, "Product added successfully! ✅", "success");
+                router.back();
+            }
+        } catch (err: any) {
+            console.error("Submission Error:", err.response?.data || err.message);
+            const errorMsg = err.response?.data?.message || "Error adding product";
+            setStatusBanner(true, `${errorMsg} ❌`, "error");
+        } finally {
+            setLoadingScreen(false);
+        }
+    };
 
     return (
-        <SafeAreaView 
-            className='w-full h-full flex justify-center items-center'
-            style={{
-                backgroundColor: colors.light[100]
-            }}
-        >
-
+        <SafeAreaView className='flex-1' style={{ backgroundColor: colors.light[100] }} edges={['top']}>
             <Stack.Screen options={{ headerShown: false }} />
-            <View   
-                className='w-full h-[45px] absolute top-0'
-                style={{
-                    backgroundColor: colors.light[100]
-                    
-                }}
-            ></View>
 
+            <Header
+                title='Create Product'
+                onBackButtonPress={() => router.back()}
+                items={
+                    <TouchableOpacity
+                        onPress={handleConfirm}
+                        activeOpacity={0.7}
+                        className='h-10 w-10 justify-center items-center rounded-full'
+                        style={{ backgroundColor: colors.dark[200] }}
+                    >
+                        <MaterialCommunityIcons
+                            name="check"
+                            size={24}
+                            color={colors.light[100]}
+                        />
+                    </TouchableOpacity>
+                }
+            />
 
-                <Header
-                    title='Create Product'
-                    onBackButtonPress={() => router.back()}
-                    items={<View>
-                        <TouchableOpacity
-                            onPress={handleConfirm}
-                            className='bg-red-500- h-14 w-14 flex justify-center items-center rounded-sm'
-                        >
-                            <Image
-                                source={require('@/app/assets/icons/tick.png')}
-                                className='w-6 h-6 mx-4'
-                            />
-                        </TouchableOpacity>
-                    </View>}
-                />
-
-                <ScrollView 
-                    className='w-full h-full p-2'
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1 }}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+            >
+                <ScrollView
+                    className='flex-1'
                     keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="on-drag"
+                    contentContainerStyle={{
+                        padding: 22,
+                        paddingBottom: 40,
+                        flexGrow: 1
+                    }}
+                    showsVerticalScrollIndicator={false}
                 >
-
-                    <View className='w-full h-fit flex flex-row justify-between items-center'>
-
-                        <TouchableOpacity 
-                            className='w-[150px] h-[150px] rounded-2xl overflow-hidden p-2'
+                    {/* Thumbnail & Basics */}
+                    <View className='flex flex-row justify-between items-start mb-8'>
+                        <TouchableOpacity
+                            className='w-[130px] h-[130px] rounded-[35px] overflow-hidden border-4 border-white shadow-xl shadow-black/10 justify-center items-center'
+                            style={{ backgroundColor: colors.light[200] }}
                             onPress={async () => {
-                                try {
-                                    const selectedThumbNail = await pickImage();
-                                    
-                                    // Check if image was actually selected
-                                    if (!selectedThumbNail) {
-                                    console.log('No image selected');
-                                    return;
-                                    }
-
-                                    const compressedThumbNail = await ImageManipulator.manipulateAsync(
-                                    selectedThumbNail,
-                                    [{ resize: { width: 1000 } }],
-                                    { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
-                                    );
-
-                                    // Update with the URI from the compressed image
-                                    setUpdatedProduct({
-                                    ...updatedProduct,
-                                    thumbNail: compressedThumbNail.uri
-                                    });
-                                } catch (error) {
-                                    console.error('Error processing image:', error);
-                                    // Optionally show an error message to the user
-                                }
+                                const result = await pickImage((msg) => setStatusBanner(true, msg, "error"));
+                                if (!result) return;
+                                const uri = typeof result === 'string' ? result : result.uri;
+                                const comp = await ImageManipulator.manipulateAsync(uri, [{ resize: { width: 1000 } }], { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG });
+                                setUpdatedProduct(prev => ({ ...prev, thumbNail: comp.uri }));
                             }}
                         >
-
-                            {updatedProduct?.thumbNail ? <Image
-                                    source={{ uri: updatedProduct?.thumbNail }}
-                                    className='w-full h-full rounded-2xl'
-                                />
-                                :
-                                <View 
-                                    className='w-full h-full rounded-2xl overflow-hidden'
-                                    style={{
-                                        backgroundColor: colors.light[250]
-                                    }}
-                                ></View>
-                            }
-
-                            <Image
-                                source={icons.editText}
-                                className='w-5 h-5 absolute bottom-5 right-5'
-                            />
-
+                            {updatedProduct.thumbNail ? (
+                                <Image source={{ uri: updatedProduct.thumbNail }} className='w-full h-full' />
+                            ) : (
+                                <Image source={icons.editText} className='w-8 h-8 opacity-20' />
+                            )}
+                            <View className='absolute bottom-0 right-0 p-2 bg-black/60 rounded-tl-2xl'>
+                                <Image source={icons.editText} className='w-3 h-3' style={{ tintColor: 'white' }} />
+                            </View>
                         </TouchableOpacity>
 
-                        <View className=' flex flex-1 flex-col justify-start gap-4 min-h-[150px] p-4'>
-
-                                <View className='w-full min-h-[30%]-'>
-                                    <Text className='text-md font-semibold m-1- mb-2'>Name : </Text>
-                                    <TextInput 
-                                        value={updatedProduct?.name.en || ''}
-                                        placeholder='product name...'
-                                        placeholderClassName='text-sm'
-                                        onChangeText={(e) => setUpdatedProduct({
-                                            ...updatedProduct, 
-                                            name: {
-                                                ...updatedProduct?.name,
-                                                en: e
-                                            }
-                                        })}
-                                        className='min-h-12 border-[0.2px] rounded-lg p-2 mt-2- text-md'
-                                        style={{
-                                            borderColor: colors.light[500]
-                                        }}
-                                        maxLength={200}
-                                        multiline
-                                    />
-                                </View>
-                            
-                            {/* <View className='w-full min-h-[40%] flex flex-row justify-start items-center'>
-                                <Text className='text-md font-medium'>{product?.name.fr}</Text>
-                            </View> */}
-                            <View className='w-full'>
-
-                                <Text className='text-md font-semibold mb-2'>Price : </Text>
-
-                                <View className='flex flex-row items-center'>
-                                    <TextInput
-                                        value={updatedProduct?.price != "0" ? updatedProduct?.price?.toString()  : ''}
-                                        placeholder='0.00'
-                                        onChangeText={(e) => {
-                                            if (/^\d*\.?\d{0,2}$/.test(e)) {
-                                                setUpdatedProduct({
-                                                    ...updatedProduct,
-                                                    price: e
-                                                });
-                                            }
-                                        }}
-                                        className=' min-w-32 min-h-12 border-[0.2px] rounded-lg p-2 px-4 text-md'
-                                        maxLength={7}
-                                        keyboardType="decimal-pad" // Use decimal keyboard if available
-                                    />
-                                    <Text className='text-md ml-2'> D.T</Text>
-
-                                </View>
+                        <View className='flex-1 ml-5 gap-y-4'>
+                            <View>
+                                <Text className='text-gray-400 text-[10px] mb-2 font-black uppercase tracking-widest ml-1'>Name (FR)</Text>
+                                <TextInput
+                                    //@ts-ignore
+                                    value={updatedProduct.name.fr}
+                                    placeholder="e.g. Luxury Watch"
+                                    onChangeText={(text) => setUpdatedProduct({ ...updatedProduct, name: { ...updatedProduct.name, fr: text } })}
+                                    className='bg-white rounded-2xl p-4 text-sm font-bold shadow-sm border border-gray-50'
+                                />
+                            </View>
+                            <View>
+                                <Text className='text-gray-400 text-[10px] mb-2 font-black uppercase tracking-widest ml-1'>Base Price (DT)</Text>
+                                <TextInput
+                                    //@ts-ignore
+                                    value={updatedProduct.price}
+                                    placeholder="0.00"
+                                    onChangeText={(text) => setUpdatedProduct({ ...updatedProduct, price: text })}
+                                    className='bg-white rounded-2xl p-4 text-sm font-bold shadow-sm border border-gray-50'
+                                    keyboardType="decimal-pad"
+                                />
                             </View>
                         </View>
-
                     </View>
 
-                    <View className='px-2'> 
-
-                        <Text className='text-md font-semibold m-4'>Description : </Text>
-
+                    {/* Description */}
+                    <View className='mb-8'>
+                        <View className='mb-5'>
+                            <Text className='text-xl font-black text-black uppercase tracking-tighter'>Description</Text>
+                            <Text className='text-gray-400 text-[10px] font-bold uppercase tracking-widest'>Product Details & Story</Text>
+                        </View>
                         <TextInput
-                            value={updatedProduct?.description.en?? ""}
-                            onChangeText={(e) => setUpdatedProduct({
-                                ...updatedProduct, 
-                                description: {
-                                    ...updatedProduct.description,
-                                    en: e
-                                }
-                            })}
-                            placeholder="Type your description..."
-                            multiline 
-                            numberOfLines={10}
-                            textAlignVertical="top" 
-                            className='h-[200px] border-[1px] rounded-lg p-1 text-md'
-                            style={{
-                                // height: 200,
-                                borderColor: colors.light[300],
-                                // borderWidth: 1,
-                                // borderRadius: 8,
-                                // padding: 10,
-                                // fontSize: 16,
-                                backgroundColor: colors.light[100]
-                            }}
+                            value={updatedProduct.description.fr}
+                            placeholder="Tell more about your product..."
+                            onChangeText={(text) => setUpdatedProduct({ ...updatedProduct, description: { ...updatedProduct.description, fr: text } })}
+                            className='bg-white rounded-[30px] p-5 text-sm min-h-[140px] shadow-sm border border-gray-50'
+                            multiline
+                            textAlignVertical="top"
                         />
                     </View>
 
-                    {product?.specifications && <HandleSpecifications
-                        updatedProduct={updatedProduct}
-                        setUpdatedProduct={setUpdatedProduct}
-                    />}
+                    {/* Sub-components */}
+                    <HandleSpecifications updatedProduct={updatedProduct} setUpdatedProduct={setUpdatedProduct} />
+                    <View className='h-6' />
+                    <HandleCollections updatedProduct={updatedProduct} setUpdatedProduct={setUpdatedProduct} />
+                    <View className='h-6' />
+                    <HandleImages updatedProduct={updatedProduct} setUpdatedProduct={setUpdatedProduct} />
 
-                    {product?.collections && <HandleCollections
-                        updatedProduct={updatedProduct}
-                        setUpdatedProduct={setUpdatedProduct}
-                        // collections={allCollections}
-                        // product={product}
-                    />}
-
-                    {updatedProduct && <HandleImages
-                        updatedProduct={updatedProduct}
-                        setUpdatedProduct={setUpdatedProduct}                    
-                    />}
-
-                    {/* {product && <ProductStatistics/>} */}
-
-                    <View className='h-10'></View>
-                    
-
+                    <View className='h-10' />
                 </ScrollView>
-
-
+            </KeyboardAvoidingView>
         </SafeAreaView>
+    );
+};
 
-    )
-}
-
-export default MakeNewProduct
+export default MakeNewProduct;

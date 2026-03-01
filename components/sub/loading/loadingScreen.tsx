@@ -16,7 +16,7 @@ export default function LoadingScreen() {
     <View style={styles.overlay}>
       <View style={styles.center}>
 
-        <View className="w-24 h-24 bg-red-500- p-3 flex flex-1-">
+        <View className="w-20 h-20 bg-red-500- p-3- flex flex-1-">
           <LoadingIcon />
 
         </View>
@@ -47,15 +47,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     display: "flex",
     flexDirection: "column",
-    minWidth: 200,
-    minHeight: 200,
+    minWidth: 175,
+    minHeight: 175,
     alignItems: "center",
     backgroundColor: colors?.light[100] || "#111",
     boxShadow: `0 5px 15px ${colors.dark[700]}`,
     borderWidth: 1,
     borderColor: colors.light[500],
     padding: 25,
-    paddingTop: 35,
+    // paddingTop: 25,
     borderRadius: 20,
     gap: 15,
   },

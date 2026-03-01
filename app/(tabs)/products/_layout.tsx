@@ -11,7 +11,7 @@ import Collections from './collection';
 import Products from './product';
 import TopBarForProductsPage from '@/components/sub/topBars/Products';
 import TopBarForCollectionsPage from '@/components/sub/topBars/collections';
-import { ProductType } from '@/types';
+import { CollectionType, ProductType } from '@/types';
 
 
 export default function TabLayout() {
@@ -21,6 +21,9 @@ export default function TabLayout() {
     const [ activePage, setActivePage ] = useState<"products" | "collections">("products");
     const [ searchBarActive, setSearchBarActive ] = useState<boolean>(false);
     const [ productsSelected, setProductsSelected ] = useState<string[]>([]);
+    const [ collectionsSelected, setCollectionsSelected ] = useState<string[]>([]);
+    const [products, setProducts] = useState<ProductType[]>([]);
+    const [collections, setCollections] = useState<CollectionType[]>([]);
 
   const handleDeleteProducts = async () => {
     
@@ -46,12 +49,20 @@ export default function TabLayout() {
         >
             {
                 activePage == "collections" ? 
-                    <TopBarForCollectionsPage/> : 
+                    <TopBarForCollectionsPage
+                        collections={collections}
+                        setCollections={setCollections}
+                        collectionsSelected={collectionsSelected}
+                        setCollectionsSelected={setCollectionsSelected}
+                    /> 
+                    : 
                     <TopBarForProductsPage
                         searchBarActive={searchBarActive} 
                         setSearchBarActive={setSearchBarActive}
                         productsSelected={productsSelected} 
                         setProductsSelected={setProductsSelected}
+                        productsList={products}
+                        setProductsList={setProducts}
                     />
             }
 
@@ -91,11 +102,25 @@ export default function TabLayout() {
                         setSearchBarActive={setSearchBarActive} 
                         productsSelected={productsSelected} 
                         setProductsSelected={setProductsSelected}
+                        products={products}
+                        setProducts={setProducts}
                     />
                 )}
             </Tab.Screen>
 
-            <Tab.Screen name="Collections" component={Collections} />
+            <Tab.Screen name="Collections">
+                {(props) => (
+                    <Collections 
+                        {...props} 
+                        CollectionsSelected={collectionsSelected} 
+                        setCollectionsSelected={setCollectionsSelected}
+                        collections={collections}
+                        setCollections={setCollections}
+                    />
+                )}
+            </Tab.Screen>
+
+            {/* <Tab.Screen name="Collections" component={Collections} /> */}
         </Tab.Navigator>
     </SafeAreaView>
 
