@@ -1,44 +1,51 @@
-import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-gesture-handler';
 import 'react-native-reanimated';
-
 import "../global.css";
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import React from 'react';
-import { ProductSectionProvider } from '@/contexts/productTab';
 import { colors } from '@/constants';
-import { SocketProvider } from '@/contexts/socket';
-import { LoadingScreenProvider, useLoadingScreen } from '@/contexts/loadingScreen';
-import LoadingScreen from '@/components/sub/loading/loadingScreen';
+import { ProductSectionProvider } from '@/contexts/productTab';
+import React, { useEffect } from 'react';
+// import { SocketProvider } from '@/contexts/socket';
+import { AdminProvider } from '@/contexts/admin';
+import { LoadingScreenProvider } from '@/contexts/loadingScreen';
+import { OwnerProvider } from '@/contexts/owner';
+import { StatusBannerProvider } from '@/contexts/StatusBanner';
+import { BannerProvider } from '@/contexts/yesNoBanner';
+import { createNotificationChannel } from '@/service/notification';
+import RootLayoutContent from './rootLayoutContent';
+
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
+
 export default function RootLayout() {
-  
-  const colorScheme = useColorScheme();
+
+  // useEffect(() => {
+  //   const handleNotifications = async () => {
+  //     await createNotificationChannel()
+  //   }
+  //   handleNotifications()
+  // }, [])
 
   return (
-    <SocketProvider>
+    // <SocketProvider>
+    <StatusBannerProvider>
       <LoadingScreenProvider>
         <ProductSectionProvider>
-            
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-              <Stack.Screen name="addProduct" options={{ presentation: 'modal', title: 'Modal' }} />
-            </Stack>
-
-            <StatusBar style="dark" backgroundColor={colors.light[100]} />
-            <LoadingScreen />
-
-            
+          <OwnerProvider>
+            <AdminProvider>
+              <BannerProvider>
+                <RootLayoutContent />
+                <StatusBar style="dark" backgroundColor={colors.light[100]} />
+              </BannerProvider>
+            </AdminProvider>
+          </OwnerProvider>
         </ProductSectionProvider>
       </LoadingScreenProvider>
-    </SocketProvider>
-
+    </StatusBannerProvider>
+    // </SocketProvider>
   );
 }
