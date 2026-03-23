@@ -1,5 +1,5 @@
 import { backEndUrl } from '@/api';
-import { icons } from '@/constants';
+import { colors, icons } from '@/constants';
 import { useAdmin } from '@/contexts/admin';
 import { useLoadingScreen } from '@/contexts/loadingScreen';
 import { useStatusBanner } from '@/contexts/StatusBanner';
@@ -9,6 +9,8 @@ import axios from 'axios';
 import { router } from 'expo-router';
 import React from 'react';
 import { Image, TouchableOpacity, View } from 'react-native';
+
+import { EyeOff } from 'lucide-react-native';
 
 type props = {
   searchBarActive: boolean,
@@ -158,7 +160,6 @@ const TopBarForProductsPage = ({
               className='w-6 h-6'
             />
           </TouchableOpacity>
-
         </View>
 
       </View>

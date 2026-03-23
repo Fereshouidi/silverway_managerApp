@@ -21,7 +21,8 @@ type props = {
   productsSelected: string[],
   setProductsSelected: (value: string[]) => void
   products: ProductType[],
-  setProducts: (value: ProductType[]) => void
+  setProducts: (value: ProductType[]) => void,
+  setHiddenModalActive?: (value: boolean) => void
 }
 
 const Products = ({
@@ -33,6 +34,7 @@ const Products = ({
   setProductsSelected,
   products,
   setProducts,
+  setHiddenModalActive
 }: props) => {
 
   const { productSectionActive, setProductSectionActive } = useProductSection();
@@ -69,6 +71,7 @@ const Products = ({
         className={`${searchBarActive && "mt-[75px]"}`}
         productsSelected={productsSelected}
         setProductsSelected={setProductsSelected}
+        setHiddenModalActive={setHiddenModalActive}
       />
 
 

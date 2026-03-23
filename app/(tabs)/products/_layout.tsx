@@ -12,6 +12,9 @@ import Products from './product';
 import TopBarForProductsPage from '@/components/sub/topBars/Products';
 import TopBarForCollectionsPage from '@/components/sub/topBars/collections';
 import { CollectionType, ProductType } from '@/types';
+import { Modal, TouchableOpacity, Text } from 'react-native';
+import ProductsList from '@/components/main/PorductsList/PorductsList';
+import { X } from 'lucide-react-native';
 
 
 export default function TabLayout() {
@@ -20,10 +23,13 @@ export default function TabLayout() {
     const Tab = createMaterialTopTabNavigator();
     const [activePage, setActivePage] = useState<"products" | "collections">("products");
     const [searchBarActive, setSearchBarActive] = useState<boolean>(false);
+    const [hiddenModalActive, setHiddenModalActive] = useState<boolean>(false);
     const [productsSelected, setProductsSelected] = useState<string[]>([]);
     const [collectionsSelected, setCollectionsSelected] = useState<string[]>([]);
     const [products, setProducts] = useState<ProductType[]>([]);
     const [collections, setCollections] = useState<CollectionType[]>([]);
+    const [archivedProducts, setArchivedProducts] = useState<ProductType[]>([]);
+    const [archivedSelected, setArchivedSelected] = useState<string[]>([]);
 
     const handleDeleteProducts = async () => {
 
@@ -104,6 +110,7 @@ export default function TabLayout() {
                             setProductsSelected={setProductsSelected}
                             products={products}
                             setProducts={setProducts}
+                            setHiddenModalActive={setHiddenModalActive}
                         />
                     )}
                 </Tab.Screen>
@@ -122,6 +129,35 @@ export default function TabLayout() {
 
                 {/* <Tab.Screen name="Collections" component={Collections} /> */}
             </Tab.Navigator>
+
+            <Modal
+                visible={hiddenModalActive}
+                animationType="slide"
+                onRequestClose={() => setHiddenModalActive(false)}
+            >
+                <SafeAreaView className='flex-1' style={{ backgroundColor: colors.light[150] }}>
+                    <View className="flex-row justify-between items-center px-6 py-4 border-b border-gray-100">
+                        <View>
+                            <Text className="text-[10px] font-bold opacity-30 uppercase tracking-[3px]">Stock Overview</Text>
+                            <Text className="text-2xl font-black text-black">Hidden Products</Text>
+                        </View>
+                        <TouchableOpacity 
+                            onPress={() => setHiddenModalActive(false)}
+                            className="bg-gray-100 w-10 h-10 rounded-full items-center justify-center"
+                        >
+                            <X size={20} color={colors.dark[100]} />
+                        </TouchableOpacity>
+                    </View>
+                    
+                    <ProductsList
+                        products={archivedProducts}
+                        setProducts={setArchivedProducts}
+                        productsSelected={archivedSelected}
+                        setProductsSelected={setArchivedSelected}
+                        status={["archived"]}
+                    />
+                </SafeAreaView>
+            </Modal>
         </SafeAreaView>
 
     );

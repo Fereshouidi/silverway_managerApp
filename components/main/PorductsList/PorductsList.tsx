@@ -16,7 +16,7 @@ import axios from 'axios';
 import { backEndUrl } from '@/api';
 import { colors } from '@/constants';
 import { ProductType } from '@/types';
-import { ShoppingBag, CheckCircle2, Layers, ChevronRight } from 'lucide-react-native';
+import { ShoppingBag, CheckCircle2, Layers, ChevronRight, EyeOff } from 'lucide-react-native';
 
 type Props = {
     products: ProductType[],
@@ -24,16 +24,20 @@ type Props = {
     className?: string
     productsSelected: string[]
     setProductsSelected: (value: string[]) => void
+    status?: string[]
+    setHiddenModalActive?: (value: boolean) => void
 }
 
 const { width } = Dimensions.get('window');
 
-const Products = ({
+const ProductsList = ({
     products,
     setProducts,
     className,
     productsSelected,
-    setProductsSelected
+    setProductsSelected,
+    status = ["active", "archived"],
+    setHiddenModalActive
 }: Props) => {
     const insets = useSafeAreaInsets();
     const router = useRouter();
@@ -51,7 +55,7 @@ const Products = ({
                 params: {
                     skip: newSkip,
                     limit,
-                    status: JSON.stringify(["active", "archived"])
+                    status: JSON.stringify(status)
                 }
             });
 
@@ -64,7 +68,7 @@ const Products = ({
         } catch (err) {
             console.error("Error fetching products:", err);
         }
-    }, [products, limit]);
+    }, [products, limit, status]);
 
     // التحميل الأول عند فتح الصفحة
     useEffect(() => {
@@ -227,9 +231,20 @@ const Products = ({
                 }
                 ListHeaderComponent={() => (
                     <View className="px-6 mb-6 flex-row justify-between items-end">
-                        <View>
+                        <View className='flex-1'>
                             <Text className="text-[10px] font-bold opacity-30 uppercase tracking-[3px]">Stock Overview</Text>
-                            <Text className="text-3xl font-black text-black">Inventory</Text>
+                            <View className='flex-row justify-between items-center gap-3'>
+                                <Text className="text-3xl font-black text-black">Inventory</Text>
+                                {setHiddenModalActive && (
+                                    <TouchableOpacity 
+                                        onPress={() => setHiddenModalActive(true)}
+                                        className="bg-gray-100 p-2 rounded-xl flex flex-row justify-center items-center gap-2"
+                                    >
+                                        <EyeOff size={18} color={colors.dark[100]} />
+                                        <Text className='text-[10px] font-bold uppercase tracking-[3px]'>hidden</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
                         </View>
                         {productsSelected.length > 0 && (
                             <View className="bg-red-50 px-4 py-1.5 rounded-full border border-red-100 shadow-sm">
@@ -251,4 +266,4 @@ const Products = ({
     );
 };
 
-export default Products;
+export default ProductsList;
