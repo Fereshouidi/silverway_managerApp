@@ -1,26 +1,17 @@
 import React from "react";
-import { View, StyleSheet, Pressable, Text } from "react-native";
+import { View, StyleSheet, Text, ActivityIndicator } from "react-native";
 import { useLoadingScreen } from "@/contexts/loadingScreen";
-import LoadingIcon from "./loadingIcon";
 import { colors } from "@/constants";
-import { useTheme } from "@react-navigation/native";
 
 export default function LoadingScreen() {
-
   const { loadingScreen } = useLoadingScreen();
-  const { colors } = useTheme();
 
   if (!loadingScreen.isOpen) return null;
 
   return (
     <View style={styles.overlay}>
       <View style={styles.center}>
-
-        <View className="w-20 h-20 bg-red-500- p-3- flex flex-1-">
-          <LoadingIcon />
-
-        </View>
-        
+        <ActivityIndicator size="large" color={colors.dark[100]} />
         {loadingScreen.message ? (
           <Text style={styles.loadingText}>
             {loadingScreen.message}
@@ -38,33 +29,28 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: 9999, // قيمة عالية لضمان الظهور فوق كل شيء
-    backgroundColor: "rgba(0,0,0,0.3)", 
+    zIndex: 9999,
+    backgroundColor: "rgba(255,255,255,0.7)",
     justifyContent: "center",
     alignItems: "center",
   },
   center: {
     justifyContent: "center",
-    display: "flex",
-    flexDirection: "column",
-    minWidth: 175,
-    minHeight: 175,
     alignItems: "center",
-    backgroundColor: colors?.light[100] || "#111",
-    boxShadow: `0 5px 15px ${colors.dark[700]}`,
-    borderWidth: 1,
-    borderColor: colors.light[500],
-    padding: 25,
-    // paddingTop: 25,
+    backgroundColor: "white",
+    padding: 30,
     borderRadius: 20,
-    gap: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+    minWidth: 150
   },
   loadingText: {
-    color: colors.dark[500],
+    color: "#333",
     fontSize: 14,
     fontWeight: "600",
-    textAlign: "center",
-    textAlignVertical: "center",
-    marginTop: 10,
+    marginTop: 15,
   },
 });

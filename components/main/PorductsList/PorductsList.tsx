@@ -1,16 +1,17 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { 
-    View, 
-    Text, 
-    FlatList, 
-    Image, 
-    TouchableOpacity, 
-    RefreshControl, 
+import {
+    View,
+    Text,
+    FlatList,
+    Image,
+    TouchableOpacity,
+    RefreshControl,
     ActivityIndicator,
     Vibration,
     Dimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import axios from 'axios';
 import { backEndUrl } from '@/api';
 import { colors } from '@/constants';
@@ -18,7 +19,7 @@ import { ProductType } from '@/types';
 import { ShoppingBag, CheckCircle2, Layers, ChevronRight } from 'lucide-react-native';
 
 type Props = {
-    products: ProductType[], 
+    products: ProductType[],
     setProducts: (value: ProductType[]) => void
     className?: string
     productsSelected: string[]
@@ -28,12 +29,13 @@ type Props = {
 const { width } = Dimensions.get('window');
 
 const Products = ({
-    products, 
+    products,
     setProducts,
     className,
     productsSelected,
     setProductsSelected
 }: Props) => {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const [skip, setSkip] = useState<number>(0);
     const [limit] = useState<number>(10);
@@ -45,14 +47,14 @@ const Products = ({
     // 1. دالة جلب البيانات من السيرفر
     const fetchData = useCallback(async (newSkip: number, append: boolean = false) => {
         try {
-            const { data } = await axios.get(`${backEndUrl}/getAllProducts`, { 
+            const { data } = await axios.get(`${backEndUrl}/getAllProducts`, {
                 params: {
                     skip: newSkip,
                     limit,
                     status: JSON.stringify(["active", "archived"])
                 }
             });
-            
+
             if (append) {
                 setProducts([...products, ...data.products]);
             } else {
@@ -91,7 +93,7 @@ const Products = ({
 
     // 4. منطق التحديد والضغط المطول
     const onLongPressProduct = (id: string) => {
-        Vibration.vibrate(50); 
+        Vibration.vibrate(50);
         if (productsSelected.includes(id)) {
             setProductsSelected(productsSelected.filter(item => item !== id));
         } else {
@@ -103,9 +105,9 @@ const Products = ({
         if (productsSelected.length > 0) {
             onLongPressProduct(id);
         } else {
-            router.push({ 
-                pathname: '/screens/productDetails/[id]', 
-                params: { id: id } 
+            router.push({
+                pathname: '/screens/productDetails/[id]',
+                params: { id: id }
             });
         }
     };
@@ -117,16 +119,17 @@ const Products = ({
         const totalQuantity = item.specifications?.reduce((acc: number, spec: any) => acc + (spec.quantity || 0), 0) || 0;
 
         return (
-            <TouchableOpacity 
+            <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => onPressProduct(item._id)}
                 onLongPress={() => onLongPressProduct(item._id)}
                 delayLongPress={500}
-                className="mx-5 mb-4 rounded-[28px] flex-row items-center p-3"
-                style={{ 
-                    backgroundColor: isSelected ? colors.dark[100] : colors.light[200],
+                className="mx-5 mb-2 rounded-[28px] flex-row items-center p-3"
+                style={{
+                    backgroundColor: isSelected ? colors.dark[150] : colors.light[100],
                     borderWidth: 1,
                     borderColor: isSelected ? colors.dark[100] : '#f2f2f2',
+                    boxShadow: `0 5px 15px ${colors.dark[950]}`,
                 }}
             >
                 <View className="w-24 h-24 rounded-[20px] overflow-hidden bg-white">
@@ -147,7 +150,7 @@ const Products = ({
                 <View className="flex-1 ml-4 py-1">
                     <View className="flex-row items-center mb-1">
                         <Layers size={10} color={isSelected ? colors.light[100] : colors.dark[100]} opacity={0.5} />
-                        <Text 
+                        <Text
                             className="text-[9px] font-bold uppercase ml-1 tracking-widest"
                             style={{ color: isSelected ? colors.light[100] : colors.dark[100], opacity: 0.5 }}
                         >
@@ -155,7 +158,7 @@ const Products = ({
                         </Text>
                     </View>
 
-                    <Text 
+                    <Text
                         className="text-[16px] font-black mb-1"
                         style={{ color: isSelected ? colors.light[100] : colors.dark[100] }}
                         numberOfLines={1}
@@ -164,14 +167,14 @@ const Products = ({
                     </Text>
 
                     <View className="flex-row items-center">
-                        <Text 
+                        <Text
                             className="text-[14px] font-bold"
                             style={{ color: isSelected ? colors.light[400] : colors.dark[100] }}
                         >
                             {item.price?.toLocaleString()} DT
                         </Text>
                         <View className="mx-2 w-1 h-1 rounded-full bg-gray-400 opacity-30" />
-                        <Text 
+                        <Text
                             className="text-[11px] font-medium"
                             style={{ color: isSelected ? colors.light[400] : colors.dark[100], opacity: 0.6 }}
                         >
@@ -180,10 +183,10 @@ const Products = ({
                     </View>
                 </View>
 
-                <ChevronRight 
-                    size={20} 
-                    color={isSelected ? colors.light[100] : colors.dark[100]} 
-                    style={{ opacity: 0.3 }} 
+                <ChevronRight
+                    size={20}
+                    color={isSelected ? colors.light[100] : colors.dark[100]}
+                    style={{ opacity: 0.3 }}
                 />
             </TouchableOpacity>
         );
@@ -210,14 +213,14 @@ const Products = ({
     }
 
     return (
-        <View className={`flex-1 ${className}`} style={{ backgroundColor: colors.light[100] }}>
+        <View className={`flex-1 ${className}`} style={{ backgroundColor: colors.light[150] }}>
             <FlatList
                 data={products}
-                keyExtractor={(_, index) => index}
+                keyExtractor={(_, index) => index.toString()}
                 renderItem={renderProduct}
-                contentContainerStyle={{ paddingTop: 20, paddingBottom: 100 }}
+                contentContainerStyle={{ paddingTop: 20, paddingBottom: 110 + insets.bottom }}
                 onEndReached={handleLoadMore}
-                onEndReachedThreshold={0.5}
+                onEndReachedThreshold={0.}
                 ListFooterComponent={renderFooter}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.dark[100]} />

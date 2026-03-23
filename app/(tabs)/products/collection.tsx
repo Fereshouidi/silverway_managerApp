@@ -6,6 +6,7 @@ import { CollectionType } from '@/types';
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Props = {
   CollectionsSelected: string[],
@@ -20,7 +21,7 @@ const Collections = ({
   collections,
   setCollections
 }: Props) => {
-
+  const insets = useSafeAreaInsets();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState(false);
   const { setStatusBanner } = useStatusBanner();
@@ -42,7 +43,7 @@ const Collections = ({
   const getAllCollections = async () => {
     await axios.get(backEndUrl + "/getAllCollections")
       .then(({ data }) => {
-        setCollections(data.allCollections);
+        setCollections([...data.allCollections].reverse());
         console.log({ collectionsLength: data.allCollections?.length });
       })
       .catch((err) => {
@@ -66,7 +67,7 @@ const Collections = ({
         className='w-full h-full pt-2 bg-red-500-'
         contentContainerStyle={{
           flexDirection: "column",
-          paddingBottom: 100,
+          paddingBottom: 110 + insets.bottom,
           alignItems: "center",
         }}
         refreshControl={

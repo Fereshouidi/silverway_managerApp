@@ -16,6 +16,7 @@ import { Stack, useRouter } from 'expo-router'
 import React, { useEffect, useState } from 'react'
 import { Image, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { Eye, EyeOff, LayoutGrid, LayoutList, Package, Trash2, Plus } from 'lucide-react-native'
 
 const MakeNewCollection = () => {
     const { setLoadingScreen } = useLoadingScreen();
@@ -106,15 +107,16 @@ const MakeNewCollection = () => {
                 items={
                     <TouchableOpacity
                         onPress={handleConfirm}
-                        activeOpacity={0.7}
-                        className='h-10 w-10 flex justify-center items-center rounded-full'
-                        style={{ backgroundColor: colors.dark[200] }}
+                        activeOpacity={0.8}
+                        className='h-11 px-5 flex-row justify-center items-center rounded-2xl shadow-sm'
+                        style={{ backgroundColor: colors.dark[100] }}
                     >
                         <MaterialCommunityIcons
                             name="check"
-                            size={24}
+                            size={20}
                             color={colors.light[100]}
                         />
+                        <Text className='font-bold ml-2' style={{ color: colors.light[100] }}>Publish</Text>
                     </TouchableOpacity>
                 }
             />
@@ -155,15 +157,21 @@ const MakeNewCollection = () => {
                     </TouchableOpacity>
                 </View>
 
-                <View className='px-5 gap-y-6'>
+                <View className='px-5 gap-y-5'>
                     {/* Name Input Card */}
-                    <View className='bg-white p-5 rounded-3xl shadow-sm border border-gray-50'>
-                        <Text className='font-bold text-sm mb-3' style={{ color: colors.dark[100] }}>Collection Name</Text>
+                    <View className='bg-white p-6 rounded-[32px] shadow-sm border border-gray-100/50'>
+                        <View className='flex-row items-center mb-4'>
+                            <View className='w-8 h-8 rounded-full items-center justify-center mr-3' style={{ backgroundColor: colors.light[200] }}>
+                                <MaterialCommunityIcons name="format-text" size={16} color={colors.dark[100]} />
+                            </View>
+                            <Text className='font-bold text-base' style={{ color: colors.dark[100] }}>Collection Name</Text>
+                        </View>
                         <TextInput
-                            placeholder='Enter collection name...'
+                            placeholder='e.g. Summer Essentials 2024'
+                            placeholderTextColor={colors.dark[100] + '40'}
                             value={collection?.name.fr ?? ""}
-                            className='w-full h-14 px-5 rounded-2xl font-medium'
-                            style={{ backgroundColor: colors.light[200], color: colors.dark[100] }}
+                            className='w-full h-14 px-5 rounded-2xl font-semibold border-2 border-transparent focus:border-black/5'
+                            style={{ backgroundColor: colors.light[150], color: colors.dark[100] }}
                             onChangeText={(e) => setCollection({
                                 ...collection,
                                 name: { ...collection.name, fr: e }
@@ -172,61 +180,113 @@ const MakeNewCollection = () => {
                     </View>
 
                     {/* Visibility Settings Card */}
-                    <View className='bg-white p-5 rounded-3xl shadow-sm border border-gray-50'>
-                        <Text className='font-bold text-sm mb-4' style={{ color: colors.dark[100] }}>Visibility Status</Text>
-                        <View className='flex-row p-1.5 rounded-2xl' style={{ backgroundColor: colors.light[200] }}>
-                            {['public', 'private'].map((type) => (
+                    <View className='bg-white p-6 rounded-[32px] shadow-sm border border-gray-100/50'>
+                        <View className='flex-row items-center mb-5'>
+                            <View className='w-8 h-8 rounded-full items-center justify-center mr-3' style={{ backgroundColor: colors.light[200] }}>
+                                <Eye size={16} color={colors.dark[100]} />
+                            </View>
+                            <Text className='font-bold text-base' style={{ color: colors.dark[100] }}>Visibility Status</Text>
+                        </View>
+                        <View className='flex-row gap-x-3'>
+                            {[
+                                { id: 'public', label: 'Public', icon: Eye, desc: 'Visible to everyone' },
+                                { id: 'private', label: 'Private', icon: EyeOff, desc: 'Only for admins' }
+                            ].map((opt) => (
                                 <TouchableOpacity
-                                    key={type}
-                                    onPress={() => setCollection({ ...collection, type: type as any })}
-                                    className='flex-1 py-3.5 rounded-xl items-center'
-                                    style={{ backgroundColor: collection.type === type ? colors.dark[100] : 'transparent' }}
+                                    key={opt.id}
+                                    activeOpacity={0.9}
+                                    onPress={() => setCollection({ ...collection, type: opt.id as any })}
+                                    className='flex-1 p-4 rounded-2xl border-2'
+                                    style={{
+                                        backgroundColor: collection.type === opt.id ? colors.dark[100] : colors.light[150],
+                                        borderColor: collection.type === opt.id ? colors.dark[100] : 'transparent'
+                                    }}
                                 >
-                                    <Text className='font-bold capitalize' style={{ color: collection.type === type ? colors.light[100] : colors.dark[100] }}>
-                                        {type}
-                                    </Text>
+                                    <opt.icon size={20} color={collection.type === opt.id ? colors.light[100] : colors.dark[100]} />
+                                    <Text className='font-bold text-sm mt-2' style={{ color: collection.type === opt.id ? colors.light[100] : colors.dark[100] }}>{opt.label}</Text>
+                                    <Text className='text-[10px] opacity-50 mt-0.5' style={{ color: collection.type === opt.id ? colors.light[100] : colors.dark[100] }}>{opt.desc}</Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
                     </View>
 
                     {/* Display Style Card */}
-                    <View className='bg-white p-5 rounded-3xl shadow-sm border border-gray-50'>
-                        <Text className='font-bold text-sm mb-4' style={{ color: colors.dark[100] }}>Home Display Style</Text>
-                        <View className='flex-row p-1.5 rounded-2xl' style={{ backgroundColor: colors.light[200] }}>
+                    <View className='bg-white p-6 rounded-[32px] shadow-sm border border-gray-100/50'>
+                        <View className='flex-row items-center mb-5'>
+                            <View className='w-8 h-8 rounded-full items-center justify-center mr-3' style={{ backgroundColor: colors.light[200] }}>
+                                <LayoutGrid size={16} color={colors.dark[100]} />
+                            </View>
+                            <Text className='font-bold text-base' style={{ color: colors.dark[100] }}>Home Display Style</Text>
+                        </View>
+                        <View className='flex-row gap-x-3'>
                             {[
-                                { label: 'Grid (Normal)', value: 'vertical' },
-                                { label: 'Slider', value: 'horizontal' }
-                            ].map((option) => (
+                                { id: 'vertical', label: 'Grid', icon: LayoutGrid, desc: 'Normal 2x2 layout' },
+                                { id: 'horizontal', label: 'Slider', icon: LayoutList, desc: 'Horizontal scroll' }
+                            ].map((opt) => (
                                 <TouchableOpacity
-                                    key={option.value}
-                                    onPress={() => setCollection({ ...collection, display: option.value as any })}
-                                    className='flex-1 py-3.5 rounded-xl items-center'
-                                    style={{ backgroundColor: collection.display === option.value ? colors.dark[100] : 'transparent' }}
+                                    key={opt.id}
+                                    activeOpacity={0.9}
+                                    onPress={() => setCollection({ ...collection, display: opt.id as any })}
+                                    className='flex-1 p-4 rounded-2xl border-2'
+                                    style={{
+                                        backgroundColor: collection.display === opt.id ? colors.dark[100] : colors.light[150],
+                                        borderColor: collection.display === opt.id ? colors.dark[100] : 'transparent'
+                                    }}
                                 >
-                                    <Text className='font-bold' style={{ color: collection.display === option.value ? colors.light[100] : colors.dark[100] }}>
-                                        {option.label}
-                                    </Text>
+                                    <opt.icon size={20} color={collection.display === opt.id ? colors.light[100] : colors.dark[100]} />
+                                    <Text className='font-bold text-sm mt-2' style={{ color: collection.display === opt.id ? colors.light[100] : colors.dark[100] }}>{opt.label}</Text>
+                                    <Text className='text-[10px] opacity-50 mt-0.5' style={{ color: collection.display === opt.id ? colors.light[100] : colors.dark[100] }}>{opt.desc}</Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
                     </View>
 
                     {/* Products Management Card */}
-                    <View className='bg-white p-6 rounded-3xl shadow-sm border border-gray-50 mb-10'>
-                        <View className='flex-row items-center justify-between'>
-                            <View>
-                                <Text className='font-bold text-lg' style={{ color: colors.dark[100] }}>Products</Text>
-                                <Text className='text-xs opacity-50' style={{ color: colors.dark[100] }}>{productsSelected.length} products selected</Text>
+                    <View className='bg-white p-6 rounded-[32px] shadow-sm border border-gray-100/50 mb-10'>
+                        <View className='flex-row items-center justify-between mb-5'>
+                            <View className='flex-row items-center'>
+                                <View className='w-8 h-8 rounded-full items-center justify-center mr-3' style={{ backgroundColor: colors.light[200] }}>
+                                    <Package size={16} color={colors.dark[100]} />
+                                </View>
+                                <Text className='font-bold text-base' style={{ color: colors.dark[100] }}>Products</Text>
                             </View>
-                            <TouchableOpacity
-                                onPress={() => setIsModalVisible(true)}
-                                className='px-6 py-3 rounded-2xl'
-                                style={{ backgroundColor: colors.dark[100] }}
-                            >
-                                <Text style={{ color: colors.light[100] }} className='font-bold'>Manage List</Text>
-                            </TouchableOpacity>
+                            <Text className='text-xs font-black' style={{ color: colors.dark[100], opacity: 0.3 }}>{productsSelected.length} TOTAL</Text>
                         </View>
+
+                        {productsSelected.length > 0 ? (
+                            <View className='flex-row items-center mb-6 py-1'>
+                                {products.filter(p => productsSelected.includes(p._id as string)).slice(0, 4).map((p, i) => (
+                                    <View
+                                        key={p._id}
+                                        className='w-12 h-12 rounded-full border-2 border-white bg-gray-100'
+                                        style={{ zIndex: 10 - i, marginLeft: i === 0 ? 0 : -20 }}
+                                    >
+                                        <Image source={{ uri: p.thumbNail || '' }} className='w-full h-full rounded-full' />
+                                    </View>
+                                ))}
+                                {productsSelected.length > 4 && (
+                                    <View className='w-12 h-12 rounded-full border-2 border-white bg-gray-200 items-center justify-center' style={{ zIndex: 0, marginLeft: -20 }}>
+                                        <Text className='text-[10px] font-black'>+{productsSelected.length - 4}</Text>
+                                    </View>
+                                )}
+                                <Text className='ml-4 text-xs font-bold text-gray-400'>Linked to collection</Text>
+                            </View>
+                        ) : (
+                            <View className='items-center py-4 opacity-30'>
+                                <Package size={32} color={colors.dark[100]} />
+                                <Text className='text-[10px] font-bold uppercase tracking-[1px] mt-2'>No products selected</Text>
+                            </View>
+                        )}
+
+                        <TouchableOpacity
+                            onPress={() => setIsModalVisible(true)}
+                            activeOpacity={0.8}
+                            className='w-full py-4 rounded-2xl items-center flex-row justify-center'
+                            style={{ backgroundColor: colors.dark[100] }}
+                        >
+                            <Plus size={18} color={colors.light[100]} />
+                            <Text style={{ color: colors.light[100] }} className='font-black ml-2 uppercase text-xs tracking-[1px]'>Manage Product List</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </ScrollView>
@@ -267,6 +327,7 @@ const MakeNewCollection = () => {
                             setProducts={setProducts}
                             productsSelected={productsSelected}
                             setProductsSelected={setProductsSelected}
+                            collectionId=''
                         />
                     </View>
                 </SafeAreaView>

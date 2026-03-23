@@ -1,4 +1,4 @@
-import { CollectionType, OnboardingParams, ProductType } from "@/types";
+import { AdminType, CollectionType, OnboardingParams, ProductType } from "@/types";
 
 export const fakeProducts = [
   {
@@ -8,6 +8,7 @@ export const fakeProducts = [
       en: "",
     },
     price: 0.0,
+    oldPrice: 0.0,
     thumbNail: "",
     images: [],
     description: {
@@ -17,13 +18,13 @@ export const fakeProducts = [
     collections: [],
     stock: 0,
     specifications: [
-      // {
-      //   color: "",
-      //   size: "",
-      //   type: "",
-      //   price: 0.0,
-      //   quantity: 0,
-      // },
+      {
+        color: "",
+        size: "",
+        type: "",
+        price: 0.0,
+        quantity: 0,
+      },
     ],
   },
   {
@@ -33,6 +34,7 @@ export const fakeProducts = [
       en: "",
     },
     price: 0.0,
+    oldPrice: 0.0,
     thumbNail: "",
     images: [],
     description: {
@@ -58,6 +60,7 @@ export const fakeProducts = [
       en: "",
     },
     price: 0.0,
+    oldPrice: 0.0,
     thumbNail: "",
     images: [],
     description: {
@@ -83,6 +86,7 @@ export const fakeProducts = [
       en: "",
     },
     price: 0.0,
+    oldPrice: 0.0,
     thumbNail: "",
     images: [],
     description: {
@@ -108,6 +112,7 @@ export const fakeProducts = [
       en: "",
     },
     price: 0.0,
+    oldPrice: 0.0,
     thumbNail: "",
     images: [],
     description: {
@@ -133,6 +138,7 @@ export const fakeProducts = [
       en: "",
     },
     price: 0.0,
+    oldPrice: 0.0,
     thumbNail: "",
     images: [],
     description: {
@@ -158,6 +164,7 @@ export const fakeProducts = [
       en: "",
     },
     price: 0.0,
+    oldPrice: 0.0,
     thumbNail: "",
     images: [],
     description: {
@@ -183,6 +190,7 @@ export const fakeProducts = [
       en: "",
     },
     price: 0.0,
+    oldPrice: 0.0,
     thumbNail: "",
     images: [],
     description: {
@@ -204,12 +212,13 @@ export const fakeProducts = [
 ] as ProductType[];
 
 export const fakeSpecification = {
-    _id: "0",
-    color: "",
-    size: "",
-    type: "",
-    price: "0.00",
-    quantity: 0,
+  _id: "0",
+  color: "",
+  size: "",
+  type: "",
+  price: "0.00",
+  quantity: 0,
+  unlimited: true,
 }
 
 export const productsLoading: ProductType[] = [
@@ -217,6 +226,7 @@ export const productsLoading: ProductType[] = [
     _id: "1",
     name: { fr: null, en: null },
     price: null,
+    oldPrice: null,
     thumbNail: null,
     images: [],
     description: { fr: null, en: null },
@@ -232,6 +242,7 @@ export const productsLoading: ProductType[] = [
     _id: "2",
     name: { fr: null, en: null },
     price: null,
+    oldPrice: null,
     thumbNail: null,
     images: [],
     description: { fr: null, en: null },
@@ -247,6 +258,7 @@ export const productsLoading: ProductType[] = [
     _id: "3",
     name: { fr: null, en: null },
     price: null,
+    oldPrice: null,
     thumbNail: null,
     images: [],
     description: { fr: null, en: null },
@@ -262,6 +274,7 @@ export const productsLoading: ProductType[] = [
     _id: "4",
     name: { fr: null, en: null },
     price: null,
+    oldPrice: null,
     thumbNail: null,
     images: [],
     description: { fr: null, en: null },
@@ -277,6 +290,7 @@ export const productsLoading: ProductType[] = [
     _id: "5",
     name: { fr: null, en: null },
     price: null,
+    oldPrice: null,
     thumbNail: null,
     images: [],
     description: { fr: null, en: null },
@@ -292,6 +306,7 @@ export const productsLoading: ProductType[] = [
     _id: "6",
     name: { fr: null, en: null },
     price: null,
+    oldPrice: null,
     thumbNail: null,
     images: [],
     description: { fr: null, en: null },
@@ -307,6 +322,7 @@ export const productsLoading: ProductType[] = [
     _id: "7",
     name: { fr: null, en: null },
     price: null,
+    oldPrice: null,
     thumbNail: null,
     images: [],
     description: { fr: null, en: null },
@@ -322,6 +338,7 @@ export const productsLoading: ProductType[] = [
     _id: "8",
     name: { fr: null, en: null },
     price: null,
+    oldPrice: null,
     thumbNail: null,
     images: [],
     description: { fr: null, en: null },
@@ -337,112 +354,150 @@ export const productsLoading: ProductType[] = [
 
 export const collectionsLoading = [
 
-    {
-        _id: "1",
-        name: {
-            fr: null,
-            en: null
-        },
-        thumbNail: null,
+  {
+    _id: "1",
+    name: {
+      fr: null,
+      en: null
     },
-    {
-        _id: "2",
-        name: {
-            fr: null,
-            en: null
-        },
-        thumbNail: null,
+    thumbNail: null,
+  },
+  {
+    _id: "2",
+    name: {
+      fr: null,
+      en: null
     },
-    {
-        _id: "3",
-        name: {
-            fr: null,
-            en: null
-        },
-        thumbNail: null,
+    thumbNail: null,
+  },
+  {
+    _id: "3",
+    name: {
+      fr: null,
+      en: null
     },
-    {
-        _id: "4",
-        name: {
-            fr: null,
-            en: null
-        },
-        thumbNail: null,
+    thumbNail: null,
+  },
+  {
+    _id: "4",
+    name: {
+      fr: null,
+      en: null
     },
-    {
-        _id: "5",
-        name: {
-            fr: null,
-            en: null
-        },
-        thumbNail: null,
+    thumbNail: null,
+  },
+  {
+    _id: "5",
+    name: {
+      fr: null,
+      en: null
     },
-    {
-        _id: "6",
-        name: {
-            fr: null,
-            en: null
-        },
-        thumbNail: null,
-    }
+    thumbNail: null,
+  },
+  {
+    _id: "6",
+    name: {
+      fr: null,
+      en: null
+    },
+    thumbNail: null,
+  }
 
 ] as CollectionType[]
 
 export const newCollection = {
-    name: {
-        fr: "",
-        en: ""
-    },
-    thumbNail: "",
-    type: "public",
-    display: "vertical"
+  name: {
+    fr: "",
+    en: ""
+  },
+  thumbNail: "",
+  type: "public",
+  display: "vertical"
 } as CollectionType
 
 
-export const getOnboardingData = () => [
-  {
-    id: 0,
-    title: "Welcome to silverWay !!",
-    image: require('@/app/assets/images/logo-simple-white.jpg'),
-    description: "Here in this application \n you will be able to controll everything in the silverway website including the products, collections, and what shown in the home page",
-  },
-  {
-    id: 1,
-    title: "page 2",
-    image: require('@/app/assets/images/logo-simple-white.jpg'),
-    description: "welcome to page 2",
-  },
-  {
-    id: 2,
-    title: "page 3",
-    image: require('@/app/assets/images/logo-simple-white.jpg'),
-    description: "welcome to page 3",
-  }
-] as OnboardingParams[];
+export const getOnboardingData = (addminData: any) => {
+  const slides = [];
 
-export const OnboardingDataForBigBoss = [
-  {
-    id: 0,
-    title: "Welcome Mr. Wassim!",
-    image: require('@/app/assets/images/logo-simple-white.jpg'),
-    description: "As the Big Boss,\nIn this application you have full permission to control everything on the Silverway website.",
-  },
-  {
-    id: 1,
-    title: "What can you control?",
-    image: require('@/app/assets/images/logo-simple-white.jpg'),
-    description: "You can manage products, collections, and company data (logo, shipping cost, social media, etc.), as well as everything that appears on the home page (billboards, top collections, the collections shown in the sidebar, the products displayed on the home page, etc.).",
-  },
-  {
-    id: 2,
-    title: "More features",
-    image: require('@/app/assets/images/logo-simple-white.jpg'),
-    description: "In this application, you will have many powerful features such as analyzing data (sales, best-selling products, etc.) and understanding your clients' activity (their carts, their likes, and more).",
+  const firstName = addminData?.fullName?.split(' ')[0] || 'Admin';
+
+  if (addminData?.type === "bigBoss") {
+    // --- BIG BOSS FLOW ---
+    slides.push({
+      id: 0,
+      title: `Welcome Mr. ${firstName}!`,
+      image: require('@/app/assets/images/logo-simple-white.jpg'),
+      description: "As the Big Boss,\nIn this application you have full permission to control everything on the Silverway website.",
+    });
+    slides.push({
+      id: 1,
+      title: "Full Control",
+      image: require('@/app/assets/images/logo-simple-white.jpg'),
+      description: "You can manage products, collections, company data, and everything that appears on the home page with absolute authority.",
+    });
+    slides.push({
+      id: 2,
+      title: "Advanced Features",
+      image: require('@/app/assets/images/logo-simple-white.jpg'),
+      description: "Access powerful tools for analyzing sales, monitoring client activity, and deep-diving into store performance metrics.",
+    });
+  } else {
+    // --- NORMAL ADMIN FLOW ---
+    slides.push({
+      id: 0,
+      title: "Welcome to the Team!",
+      image: require('@/app/assets/images/logo-simple-white.jpg'),
+      description: `Welcome MR, ${addminData?.firstName || 'Admin'}! \n You've been granted access to the SilverWay management system. We're glad to have you on board.`,
+    });
+
+    const roleMapping: Record<string, string> = {
+      "Open Analytics page": "• Monitor sales & performance statistics",
+      "Open Orders page": "• View and track order status",
+      "Open Products page": "• Browse the product inventory",
+      "Open setting page": "• See the setting of the store .",
+      "Manage Products": "• Add, Edit, Delete and Update products",
+      "Manage Collections": "• Add, Edit, Delete and Update collections",
+      "Manage Orders": "• Process and fulfill customer orders",
+      "View Clients data": "• Analyze & Update client profiles and activity",
+      "View Admins data": "• See, Edit and delete other administrators",
+      "View delivery worker data": "• See, Edit and delete the delivery worker",
+      "Control Settings": "• See & Update core store information",
+    };
+
+    const userRoles = (addminData?.accesses || [])
+      .map((key: string) => roleMapping[key])
+      .filter(Boolean)
+      .slice(0, 5);
+
+    if (userRoles.length > 0) {
+      slides.push({
+        id: 1,
+        title: "Your Roles",
+        image: require('@/app/assets/images/logo-simple-white.jpg'),
+        description: `Based on your permissions, you can:\n\n${userRoles.join('\n')}`,
+      });
+    } else {
+      slides.push({
+        id: 1,
+        title: "Tailored Workspace",
+        image: require('@/app/assets/images/logo-simple-white.jpg'),
+        description: "Your dashboard is customized to match your specific roles. Head over to the tabs to begin managing the store.",
+      });
+    }
+
+    slides.push({
+      id: 2,
+      title: "Stay Synced",
+      image: require('@/app/assets/images/logo-simple-white.jpg'),
+      description: "Monitor store activity in real-time and stay updated with the latest activity to ensure our clients get the best experience.",
+    });
   }
-];
+
+  return slides;
+};
 
 export const accessesDispo = [
-  , "Open Analytics page"     
+  , "Open Analytics page"
   , "Open Orders page"
   , "Open Products page"
   , "Open People page"
@@ -455,4 +510,5 @@ export const accessesDispo = [
   , "View Admins data"
   , "View delivery worker data"
   , "Control Settings"
+  , "Open notifications page"
 ]

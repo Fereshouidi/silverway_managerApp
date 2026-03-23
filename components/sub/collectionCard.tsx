@@ -11,24 +11,24 @@ import SkeletonLoading from './SkeletonLoading';
 type CollectionCardType = {
     collection: CollectionType;
     isLoading: boolean;
-    collectionsSelected: string[], 
+    collectionsSelected: string[],
     setCollectionsSelected: (value: string[]) => void
     collections: CollectionType[]
     setCollections: (value: CollectionType[]) => void
 };
 
-const CollectionCard = ({ 
-    collection, 
-    isLoading,  
+const CollectionCard = ({
+    collection,
+    isLoading,
     collectionsSelected,
     setCollectionsSelected,
     collections,
     setCollections
 }: CollectionCardType) => {
-    
+
     const [isPressed, setIsPressed] = useState(false);
     const router = useRouter();
-    
+
     const isSelected = collectionsSelected.includes(collection._id || "");
     const isArchived = collection.status === "archived";
 
@@ -67,7 +67,7 @@ const CollectionCard = ({
                 style={{
                     width: "100%",
                     height: "100%",
-                    borderRadius: 8, 
+                    borderRadius: 8,
                     overflow: 'hidden',
                     opacity: isArchived ? 0.3 : 1,
                     ...Platform.select({
@@ -84,13 +84,13 @@ const CollectionCard = ({
                 }}
             >
                 {/* Image Section */}
-                <View 
+                <View
                     style={{ backgroundColor: colors.dark[300] }}
                     className="w-full h-[80%] items-center justify-center relative"
                 >
                     {collection.thumbNail ? (
-                        <Image 
-                            source={{ uri: collection.thumbNail }} 
+                        <Image
+                            source={{ uri: collection.thumbNail }}
                             className="w-full h-full"
                             resizeMode="cover"
                         />
@@ -100,7 +100,7 @@ const CollectionCard = ({
 
                     {/* Selection Indicator */}
                     {isSelected && (
-                        <View 
+                        <View
                             className="absolute top-2 right-2 w-6 h-6 rounded-full items-center justify-center shadow-md"
                             style={{ backgroundColor: colors.light[950] }}
                         >
@@ -112,7 +112,7 @@ const CollectionCard = ({
                 {/* Text Section */}
                 <View className="flex-1 justify-center p-3">
                     {collection.name?.en ? (
-                        <Text 
+                        <Text
                             style={{ color: colors.dark[150] }}
                             className="text-center font-bold text-sm"
                             numberOfLines={1}

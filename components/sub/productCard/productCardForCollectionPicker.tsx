@@ -55,7 +55,7 @@ const ProductCardForCollectionPicker = ({
             onPress={handleToggleSelection}
             className={`rounded-3xl border-2 overflow-hidden ${className}`}
             style={{
-                backgroundColor: colors.light[200],
+                backgroundColor: colors.light[100],
                 borderColor: isSelected ? colors.dark[100] : 'transparent',
                 opacity: isArchived ? 0.6 : 1,
                 ...Platform.select({

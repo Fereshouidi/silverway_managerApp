@@ -8,12 +8,12 @@ import { useContext, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React from 'react';
 import Button from '@/components/sub/Button';
-import { getOnboardingData, OnboardingDataForBigBoss } from '@/constants/data';
+import { getOnboardingData } from '@/constants/data';
 import "@/global.css";
 import { AdminAccess, WelcomeProps } from '@/types/index';
 import { colors } from '@/constants';
 import { useRouter } from 'expo-router';
-import { useAdmin } from '@/contexts/admin'; 
+import { useAdmin } from '@/contexts/admin';
 
 const Welcome = ({ navigation }: WelcomeProps) => {
 
@@ -21,24 +21,22 @@ const Welcome = ({ navigation }: WelcomeProps) => {
     const [isLastSlide, setIsLastSlide] = useState<boolean>(false);
     const swiperRef = useRef<Swiper>(null);
     const router = useRouter();
-    const { admin } = useAdmin(); 
+    const { admin } = useAdmin();
     const [activeOnboardingData, setActiveOnboardingData] = useState<any[]>([]);
 
     useEffect(() => {
-        if (admin?.type == "bigBoss") {
-            setActiveOnboardingData(OnboardingDataForBigBoss);
-        } else {
-            setActiveOnboardingData(getOnboardingData());
+        if (admin) {
+            setActiveOnboardingData(getOnboardingData(admin));
         }
     }, [admin])
 
     useEffect(() => {
-        if (activeIndex == getOnboardingData().length - 1) {
+        if (activeOnboardingData.length > 0 && activeIndex === activeOnboardingData.length - 1) {
             setIsLastSlide(true);
         } else {
             setIsLastSlide(false);
         }
-    }, [activeIndex])
+    }, [activeIndex, activeOnboardingData])
 
     // دالة التوجيه بناءً على أول صلاحية متاحة من مصفوفة accessesDispo
     const handleGetStarted = () => {
@@ -52,45 +50,45 @@ const Welcome = ({ navigation }: WelcomeProps) => {
         ];
 
         // البحث عن أول تطابق بين صلاحيات الأدمن والمسارات المتاحة
-        const firstAvailable = priorityRoutes.find(route => 
+        const firstAvailable = priorityRoutes.find(route =>
             admin?.accesses?.includes(route.key as AdminAccess)
         );
 
         if (firstAvailable) {
-            console.log({firstAvailable});
-            
+            console.log({ firstAvailable });
+
             router.replace(firstAvailable.path as any);
         } else {
             // إذا لم يملك أي صلاحية لفتح الصفحات، نرجعه لتسجيل الدخول أو صفحة فارغة
             console.error("No access to any tab found for this admin");
-            router.replace("/(auth)/login" as any); 
+            router.replace("/(auth)/login" as any);
         }
     };
 
     return (
-        <SafeAreaView 
+        <SafeAreaView
             className={` w-full h-full bg-whiteScale-100 dark:bg-blackScale-100`}
             style={{
                 backgroundColor: colors.light[100]
             }}
         >
-            
+
             <View
                 className='w-full h-full'
-                style={{zIndex: 100}} 
+                style={{ zIndex: 100 }}
             >
 
-                <Swiper 
+                <Swiper
                     ref={swiperRef}
                     loop={false}
-                    dot={<View 
-                        className="w-[10px] h-[10px] mx-1 bg-blackScale-100 dark:bg-whiteScale-100 rounded-full" 
+                    dot={<View
+                        className="w-[10px] h-[10px] mx-1 bg-blackScale-100 dark:bg-whiteScale-100 rounded-full"
                         style={{
                             backgroundColor: colors.light[300]
                         }}
                     />}
-                    activeDot={<View 
-                        className="w-[10px] h-[10px] mx-1 rounded-full" 
+                    activeDot={<View
+                        className="w-[10px] h-[10px] mx-1 rounded-full"
                         style={{
                             backgroundColor: colors.dark[100]
                         }}
@@ -99,9 +97,9 @@ const Welcome = ({ navigation }: WelcomeProps) => {
                     className='w-full py-10 '
                 >
                     {activeOnboardingData.map((item, index) => {
-                        return ( 
-                            <View 
-                                className="w-full h-full flex items-center" 
+                        return (
+                            <View
+                                className="w-full h-full flex items-center"
                                 key={item.id}
                             >
                                 <Image
@@ -119,18 +117,18 @@ const Welcome = ({ navigation }: WelcomeProps) => {
 
                 <View className="flex flex-row items-center justify-center w-full px-5 my-5">
 
-                    <Button 
+                    <Button
                         tittle={isLastSlide ? "getStarted" : "next"}
-                        onPress={() => isLastSlide ? 
-                            handleGetStarted() 
-                            : 
+                        onPress={() => isLastSlide ?
+                            handleGetStarted()
+                            :
                             swiperRef.current?.scrollBy(1)
                         }
                         isWork={true}
                     />
 
                 </View>
-                
+
             </View>
 
         </SafeAreaView>

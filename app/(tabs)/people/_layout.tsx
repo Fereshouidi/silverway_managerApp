@@ -11,6 +11,7 @@ import DeliveryWorker from './deliveryWorker';
 import AdminsList from './adminsList';
 import axios from 'axios';
 import { backEndUrl } from '@/api';
+import { router } from 'expo-router';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -96,7 +97,9 @@ export default function UsersPage() {
             <View style={{ backgroundColor: colors.light[100] }}>
                 <Header
                     title='People Management'
+                    // className='h-9'
                     style={{ backgroundColor: 'transparent' }}
+                    onBackButtonPress={() => router.back()}
                 />
             </View>
 

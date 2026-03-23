@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  FlatList, 
-  Image, 
-  TouchableOpacity, 
-  RefreshControl, 
-  ActivityIndicator 
+import {
+  View,
+  Text,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  RefreshControl,
+  ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router'; // استيراد الموجّه
 import axios from 'axios';
 import { colors, icons } from '@/constants';
 import { backEndUrl } from '@/api';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const ClientsList = () => {
+  const insets = useSafeAreaInsets();
   const router = useRouter(); // تعريف الموجّه
   const [clients, setClients] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
@@ -68,7 +70,7 @@ const ClientsList = () => {
   };
 
   const renderClientItem = ({ item }: { item: any }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       activeOpacity={0.7}
       // إضافة التوجيه لصفحة التفاصيل عند الضغط
       onPress={() => router.push({
@@ -76,14 +78,14 @@ const ClientsList = () => {
         params: { id: item._id }
       })}
       className="flex-row items-center p-4 mx-4 my-2 rounded-2xl shadow-sm"
-      style={{ backgroundColor: colors.light[200] }}
+      style={{ backgroundColor: colors.light[100] }}
     >
-      <View 
+      <View
         className="w-12 h-12 rounded-full items-center justify-center"
         style={{ backgroundColor: colors.light[400] }}
       >
-        <Image 
-          source={icons.userWhite} 
+        <Image
+          source={icons.userWhite}
           style={{ width: 22, height: 22 }}
           tintColor={colors.light[100]}
         />
@@ -133,12 +135,12 @@ const ClientsList = () => {
       {/* Header */}
       <View className="px-6 py-4 flex-row justify-between items-end">
         <View>
-            <Text className="text-[10px] font-bold opacity-30 uppercase tracking-widest">Directory</Text>
-            <Text className="text-2xl font-bold" style={{ color: colors.dark[100] }}>Clients</Text>
+          <Text className="text-[10px] font-bold opacity-30 uppercase tracking-widest">Directory</Text>
+          <Text className="text-2xl font-bold" style={{ color: colors.dark[100] }}>Clients</Text>
         </View>
         <View className="flex-row items-center bg-gray-50 px-3 py-1 rounded-full">
-            <Text className="text-xs font-bold" style={{ color: colors.dark[100] }}>{clients.length}</Text>
-            <Text className="text-xs opacity-40"> / {total}</Text>
+          <Text className="text-xs font-bold" style={{ color: colors.dark[100] }}>{clients.length}</Text>
+          <Text className="text-xs opacity-40"> / {total}</Text>
         </View>
       </View>
 
@@ -146,9 +148,9 @@ const ClientsList = () => {
         data={clients}
         keyExtractor={(item, index) => item._id || index.toString()}
         renderItem={renderClientItem}
-        contentContainerStyle={{ paddingBottom: 70 }}
+        contentContainerStyle={{ paddingBottom: 60 + insets.bottom }}
         onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.2} 
+        onEndReachedThreshold={0.2}
         ListFooterComponent={renderFooter}
         refreshControl={
           <RefreshControl

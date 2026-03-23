@@ -3,25 +3,27 @@ import OrderCart from '@/components/sub/orderCart'
 import { DeliveryWorkerType, OrderType } from '@/types'
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, Image, RefreshControl, FlatList, ActivityIndicator, Platform } from 'react-native'
-import LoadingIcon from '@/components/sub/loading/loadingIcon'
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import axios from 'axios'
 import { backEndUrl } from '@/api'
 
 type props = {
-    deliveredOrdersCount: number, 
+    deliveredOrdersCount: number,
     setDeliveredOrdersCounts: (value: number) => void
-    deliveryWorker?: DeliveryWorkerType, 
+    deliveryWorker?: DeliveryWorkerType,
     setDeliveryWorker?: (value: DeliveryWorkerType) => void
     onOrderPress: (order: OrderType) => void
+    refreshKey?: number
 }
 
 const Delivered = ({
     deliveredOrdersCount,
     setDeliveredOrdersCounts,
     deliveryWorker,
-    onOrderPress
+    onOrderPress,
+    refreshKey
 }: props) => {
-
+    const insets = useSafeAreaInsets();
     const [refreshing, setRefreshing] = useState<boolean>(false);
     const [loadingMore, setLoadingMore] = useState<boolean>(false);
     const [initialLoading, setInitialLoading] = useState<boolean>(true);
@@ -67,10 +69,10 @@ const Delivered = ({
 
     useEffect(() => {
         handleRefresh();
-    }, []);
+    }, [refreshKey]);
 
     const renderItem = useCallback(({ item }: { item: OrderType }) => (
-        <OrderCart 
+        <OrderCart
             order={item}
             deliveryWorker={deliveryWorker!}
             onPress={() => onOrderPress(item)}
@@ -97,13 +99,13 @@ const Delivered = ({
                     data={deliveredOrders}
                     renderItem={renderItem}
                     keyExtractor={(item, index) => item._id || index.toString()}
-                    contentContainerStyle={{ paddingVertical: 10, paddingBottom: 120 }}
+                    contentContainerStyle={{ paddingVertical: 10, paddingBottom: 110 + insets.bottom }}
                     onEndReached={getMoreDeliveredOrder}
                     onEndReachedThreshold={0.3}
                     className='px-2'
                     refreshControl={
-                        <RefreshControl 
-                            refreshing={refreshing} 
+                        <RefreshControl
+                            refreshing={refreshing}
                             onRefresh={handleRefresh}
                             colors={[colors.dark[100]]}
                             tintColor={colors.dark[100]}

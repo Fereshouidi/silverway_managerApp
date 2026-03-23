@@ -54,7 +54,7 @@ const ProductCard = ({
             className={`flex flex-col items-center p-2 mb-2 ${className}`}
             style={{
                 borderRadius: 20,
-                backgroundColor: isSelected ? colors.dark[100] : colors.light[200],
+                backgroundColor: isSelected ? colors.dark[100] : colors.light[100],
                 opacity: isHidden && !isSelected ? 0.5 : 1, // تحسين رؤية المخفي
                 ...Platform.select({
                     ios: {
@@ -90,9 +90,9 @@ const ProductCard = ({
                 {isHidden && (
                     <View 
                         className="absolute top-2 right-2 px-2 py-1 rounded-lg"
-                        style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+                        style={{ backgroundColor: colors.light[100] }}
                     >
-                        <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>HIDDEN</Text>
+                        <Text style={{ color: colors.dark[100], fontSize: 10, fontWeight: 'bold' }}>HIDDEN</Text>
                     </View>
                 )}
             </View>

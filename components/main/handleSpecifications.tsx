@@ -16,7 +16,7 @@ const HandleSpecifications = ({ updatedProduct, setUpdatedProduct }: Props) => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
     const [tempColor, setTempColor] = useState('#000000');
-    
+
     const pickerColorRef = useRef('#000000');
 
     const updateSpec = useCallback((index: number, newData: Partial<ProductSpecificationToEdit>) => {
@@ -43,12 +43,12 @@ const HandleSpecifications = ({ updatedProduct, setUpdatedProduct }: Props) => {
     // عند إضافة مواصفة جديدة، نستخدم Timestamp كـ ID مؤقت
     const addNewSpecification = () => {
         const tempId = `temp_${Date.now()}`; // معرف مؤقت فريد
-        const newSpec = { 
-            ...fakeSpecification, 
-            _id: tempId, 
-            colorHex: '#000000', 
-            quantity: 0, 
-            price: "0" 
+        const newSpec = {
+            ...fakeSpecification,
+            _id: tempId,
+            colorHex: '#000000',
+            quantity: 0,
+            price: "0"
         };
         setUpdatedProduct({
             ...updatedProduct,
@@ -59,12 +59,12 @@ const HandleSpecifications = ({ updatedProduct, setUpdatedProduct }: Props) => {
     return (
         <View className='w-full min-h-[100px]- bg-red-500- mt-8'>
             {/* Header Section */}
-            <View className='flex-row justify-between items-center px-6 mb-6'>
+            <View className='flex-row justify-between items-center px-6- mb-6'>
                 <View>
                     <Text className='text-xl font-black text-black uppercase tracking-tighter'>Inventory</Text>
                     <Text className='text-gray-400 text-[10px] font-bold uppercase tracking-widest'>Styles & Stock Management</Text>
                 </View>
-                <TouchableOpacity 
+                <TouchableOpacity
                     onPress={addNewSpecification}
                     className='bg-black px-4 py-2.5 rounded-2xl flex-row items-center shadow-lg'
                 >
@@ -73,95 +73,149 @@ const HandleSpecifications = ({ updatedProduct, setUpdatedProduct }: Props) => {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false} 
-                contentContainerStyle={{ paddingHorizontal: 20, gap: 16, paddingBottom: 25 }}
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 0, gap: 10, paddingBottom: 25 }}
             >
                 {updatedProduct.specifications?.map((specification, index) => (
-                    <View key={specification._id || index} className='w-[300px] bg-white rounded-[40px] p-6 border border-gray-100 shadow-2xl shadow-black/5'>
-                        
+                    <View
+                        key={specification._id || index}
+                        className={`w-[320px] bg-white rounded-[40px] p-6 border-2 shadow-2xl shadow-black/5 ${specification.unlimited ? 'border-green-100' : 'border-gray-50'}`}
+                        style={{
+                            backgroundColor: colors.light[100],
+                            borderRadius: 20,
+                            padding: 10,
+                            borderWidth: 1,
+                            borderColor: colors.light[200]
+                        }}
+                    >
                         {/* Card Header */}
                         <View className='flex-row justify-between items-center mb-6'>
-                            <View className='bg-black px-3 py-1 rounded-full'>
-                                <Text className='font-black text-white text-[9px] uppercase tracking-widest'>Variant #{index + 1}</Text>
+                            <View className={`px-4 py-1.5 rounded-full ${specification.unlimited ? 'bg-green-500' : 'bg-black'}`}>
+                                <Text className='font-black text-white text-[10px] uppercase tracking-widest'>
+                                    {specification.unlimited ? '∞ UNLIMITED' : `VARIANT #${index + 1}`}
+                                </Text>
                             </View>
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 onPress={() => {
                                     const filtered = updatedProduct.specifications?.filter((_, i) => i !== index);
                                     setUpdatedProduct({ ...updatedProduct, specifications: filtered });
                                 }}
-                                className='bg-gray-50 w-8 h-8 items-center justify-center rounded-full'
+                                className='bg-red-50 w-8 h-8 items-center justify-center rounded-full border border-red-100'
                             >
-                                <Text className='text-black font-bold'>✕</Text>
+                                <Text className='text-red-500 font-bold'>✕</Text>
                             </TouchableOpacity>
                         </View>
 
-                        {/* Color Selector Preview */}
-                        <TouchableOpacity 
-                            onPress={() => openColorPicker(index, specification.colorHex)}
-                            activeOpacity={0.9}
-                            className="w-full h-24 rounded-[30px] flex-row items-center px-5 mb-6 bg-gray-50 border border-gray-100"
-                        >
-                            <View style={{ backgroundColor: specification.colorHex || '#000' }} className="w-14 h-14 rounded-full border-4 border-white shadow-md" />
-                            <View className='ml-4'>
-                                <Text className='text-gray-400 text-[10px] font-black uppercase tracking-widest'>Hex Code</Text>
-                                <Text className='text-black font-black text-lg uppercase'>{specification.colorHex || '#000000'}</Text>
-                            </View>
-                            <View className='ml-auto bg-black p-2.5 rounded-xl'>
-                                <Image source={icons.editText} className='w-3 h-3' style={{ tintColor: 'white' }} />
-                            </View>
-                        </TouchableOpacity>
+                        {/* Zone 1: Aesthetic Attributes */}
+                        <View className="mb-6 p-4 bg-gray-50/50 rounded-[30px] border border-gray-100">
+                            <Text className='text-[10px] font-black text-gray-300 mb-4 uppercase tracking-widest'>1. Aesthetic Design</Text>
 
-                        {/* Inputs Grid */}
-                        <View className='gap-y-5'>
-                            <View>
-                                <Text className='text-[10px] font-black text-gray-400 mb-2 ml-1 uppercase tracking-widest'>Label & Type</Text>
-                                <View className='flex-row gap-3'>
+                            <View className="flex-row items-center mb-4">
+                                <TouchableOpacity
+                                    onPress={() => openColorPicker(index, specification.colorHex)}
+                                    activeOpacity={0.9}
+                                    style={{ backgroundColor: specification.colorHex || '#000' }}
+                                    className="w-14 h-14 rounded-full border-4 border-white shadow-md items-center justify-center"
+                                >
+                                    <Image source={icons.editText} className='w-3 h-3' style={{ tintColor: 'white', opacity: 0.5 }} />
+                                </TouchableOpacity>
+                                <View className='ml-4 flex-1'>
+                                    <Text className='text-gray-400 text-[9px] font-black uppercase tracking-widest mb-1'>Color Name</Text>
                                     <TextInput
                                         value={specification.color || ''}
-                                        placeholder="Color Name"
+                                        placeholder="Red, Blue..."
                                         onChangeText={(text) => updateSpec(index, { color: text })}
-                                        className='flex-[1.5] bg-gray-50 px-5 py-4 rounded-2xl text-xs font-black'
-                                        placeholderTextColor="#9CA3AF"
-                                    />
-                                    <TextInput
-                                        value={specification.type || ''}
-                                        placeholder="Type"
-                                        onChangeText={(text) => updateSpec(index, { type: text })}
-                                        className='flex-1 bg-gray-50 px-5 py-4 rounded-2xl text-xs font-black text-center'
-                                        placeholderTextColor="#9CA3AF"
+                                        className='bg-white h-12 px-4 py-3 rounded-xl text-[11px] font-bold border border-gray-100'
+                                        // style={{
+                                        //     backgroundColor: colors.light[100],
+                                        //     borderRadius: 10,
+                                        //     padding: 10,
+                                        //     borderWidth: 1,
+                                        //     borderColor: colors.light[200]
+                                        // }}
+                                        placeholderTextColor="#D1D5DB"
                                     />
                                 </View>
                             </View>
 
-                            <View className='flex-row gap-3'>
-                                <View className='flex-1'>
-                                    <Text className='text-[10px] font-black text-gray-400 mb-2 ml-1 uppercase tracking-widest'>Size</Text>
+                            <View className="flex-row gap-3">
+                                <View className="flex-1">
+                                    <Text className='text-gray-400 text-[9px] font-black uppercase tracking-widest mb-2 ml-1'>Type</Text>
+                                    <TextInput
+                                        value={specification.type || ''}
+                                        placeholder="Cotton, Silk"
+                                        onChangeText={(text) => updateSpec(index, { type: text })}
+                                        className='bg-white px-4 py-3 rounded-xl text-[11px] font-bold border border-gray-100'
+                                        placeholderTextColor="#D1D5DB"
+                                    />
+                                </View>
+                                <View className="flex-1">
+                                    <Text className='text-gray-400 text-[9px] font-black uppercase tracking-widest mb-2 ml-1'>Size</Text>
                                     <TextInput
                                         value={specification.size || ''}
-                                        placeholder="XL"
+                                        placeholder="XL, 42"
                                         onChangeText={(text) => updateSpec(index, { size: text })}
-                                        className='bg-gray-50 py-4 rounded-2xl text-xs text-center font-black'
+                                        className='bg-white px-4 py-3 rounded-xl text-[11px] font-bold border border-gray-100 text-center'
+                                        placeholderTextColor="#D1D5DB"
                                     />
                                 </View>
+                            </View>
+                        </View>
+
+                        {/* Zone 2: Market & Inventory */}
+                        <View className={`p-4 rounded-[30px] border ${specification.unlimited ? 'bg-green-50/20 border-green-100' : 'bg-gray-50/50 border-gray-100'}`}>
+                            <Text className={`text-[10px] font-black mb-4 uppercase tracking-widest ${specification.unlimited ? 'text-green-300' : 'text-gray-300'}`}>2. Market & Stock</Text>
+
+                            <View className="flex-row gap-3 mb-4">
                                 <View className='flex-1'>
-                                    <Text className='text-[10px] font-black text-gray-400 mb-2 ml-1 uppercase tracking-widest'>Stock</Text>
-                                    <TextInput
-                                        value={specification.quantity?.toString() || ''}
-                                        keyboardType='number-pad'
-                                        onChangeText={(v) => updateSpec(index, { quantity: parseInt(v) || 0 })}
-                                        className='bg-gray-50 py-4 rounded-2xl text-xs text-center font-black'
-                                    />
+                                    <Text className='text-gray-400 text-[9px] font-black uppercase tracking-widest mb-2 ml-1'>Availability</Text>
+                                    <View className="flex-row items-center bg-white rounded-xl p-1 h-[44px] border border-gray-100">
+                                        <TouchableOpacity
+                                            onPress={() => updateSpec(index, { unlimited: false })}
+                                            className={`flex-1 h-full items-center justify-center rounded-lg ${!specification.unlimited ? 'bg-black' : ''}`}
+                                        >
+                                            <Text className={`text-[8px] font-bold ${!specification.unlimited ? 'text-white' : 'text-gray-400'}`}>LIMIT</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            onPress={() => updateSpec(index, { unlimited: true })}
+                                            className={`flex-1 h-full items-center justify-center rounded-lg ${specification.unlimited ? 'bg-green-500' : ''}`}
+                                        >
+                                            <Text className={`text-[8px] font-bold ${specification.unlimited ? 'text-white' : 'text-gray-400'}`}>∞ INF</Text>
+                                        </TouchableOpacity>
+                                    </View>
                                 </View>
-                                <View className='flex-[1.2]'>
-                                    <Text className='text-[10px] font-black text-gray-400 mb-2 ml-1 uppercase tracking-widest'>Price</Text>
+
+                                <View className='flex-1'>
+                                    <Text className='text-gray-400 text-[9px] font-black uppercase tracking-widest mb-2 ml-1'>Stock</Text>
+                                    <View className="relative">
+                                        <TextInput
+                                            value={specification.unlimited ? '∞' : (specification.quantity?.toString() || '0')}
+                                            keyboardType='number-pad'
+                                            editable={!specification.unlimited}
+                                            onChangeText={(v) => updateSpec(index, { quantity: parseInt(v) || 0 })}
+                                            className={`h-[44px] rounded-xl text-xs text-center font-black border ${specification.unlimited ? 'bg-green-500/10 text-green-600 border-green-200' : 'bg-white text-black border-gray-100'}`}
+                                        />
+                                        {specification.unlimited && (
+                                            <View className="absolute right-2 top-3 w-1.5 h-1.5 rounded-full bg-green-500" />
+                                        )}
+                                    </View>
+                                </View>
+                            </View>
+
+                            <View>
+                                <Text className='text-gray-400 text-[9px] font-black uppercase tracking-widest mb-2 ml-1'>Selling Price</Text>
+                                <View className="flex-row items-center bg-black rounded-2xl px-5 h-[56px] shadow-lg shadow-black/20">
                                     <TextInput
                                         value={specification.price?.toString() || ''}
                                         keyboardType='decimal-pad'
                                         onChangeText={(v) => updateSpec(index, { price: v })}
-                                        className='bg-black py-4 rounded-2xl text-xs text-center font-black text-white shadow-lg'
+                                        className='flex-1 text-white font-black text-lg'
+                                        placeholder="0.00"
+                                        placeholderTextColor="rgba(255,255,255,0.2)"
                                     />
+                                    <Text className="text-white/40 font-black text-xs">TND</Text>
                                 </View>
                             </View>
                         </View>
@@ -169,7 +223,7 @@ const HandleSpecifications = ({ updatedProduct, setUpdatedProduct }: Props) => {
                 ))}
 
                 {/* Ghost Add Button */}
-                <TouchableOpacity 
+                <TouchableOpacity
                     onPress={addNewSpecification}
                     className='w-[140px] min-h-52 items-center justify-center rounded-[40px] border-2 border-dashed border-gray-200 bg-gray-50/50'
                 >
@@ -181,17 +235,17 @@ const HandleSpecifications = ({ updatedProduct, setUpdatedProduct }: Props) => {
             </ScrollView>
 
             {/* Premium Color Picker Modal */}
-            <Modal 
-                visible={isModalVisible} 
-                transparent 
+            <Modal
+                visible={isModalVisible}
+                transparent
                 animationType="fade" // استخدام fade بدلاً من slide لشعور أنعم
             >
                 <View className="flex-1 justify-center items-center bg-black/80 px-6">
                     {/* Background Closer */}
-                    <TouchableOpacity 
-                        className="absolute inset-0" 
-                        activeOpacity={1} 
-                        onPress={() => setIsModalVisible(false)} 
+                    <TouchableOpacity
+                        className="absolute inset-0"
+                        activeOpacity={1}
+                        onPress={() => setIsModalVisible(false)}
                     />
 
                     <View className="w-full bg-white rounded-[40px] p-8 shadow-2xl overflow-hidden">
@@ -219,9 +273,9 @@ const HandleSpecifications = ({ updatedProduct, setUpdatedProduct }: Props) => {
                         {/* Hex Display & Preview Row */}
                         <View className='flex-row items-center justify-between mt-8'>
                             <View className="flex-row items-center flex-1">
-                                <View 
-                                    style={{ backgroundColor: tempColor }} 
-                                    className='w-14 h-14 rounded-2xl border-4 border-gray-100 shadow-sm' 
+                                <View
+                                    style={{ backgroundColor: tempColor }}
+                                    className='w-14 h-14 rounded-2xl border-4 border-gray-100 shadow-sm'
                                 />
                                 <View className="ml-4">
                                     <Text className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Active Hex</Text>
@@ -230,8 +284,8 @@ const HandleSpecifications = ({ updatedProduct, setUpdatedProduct }: Props) => {
                             </View>
 
                             {/* Black Confirm Button inside the card */}
-                            <TouchableOpacity 
-                                onPress={confirmColor} 
+                            <TouchableOpacity
+                                onPress={confirmColor}
                                 className="bg-black h-14 w-14 rounded-2xl items-center justify-center shadow-lg"
                             >
                                 <Image source={icons.check} className='w-5 h-5 rotate-45-' style={{ tintColor: 'white' }} />

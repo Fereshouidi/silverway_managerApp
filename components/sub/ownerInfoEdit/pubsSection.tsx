@@ -33,9 +33,9 @@ const PubsSection = ({ pubData, setPubData }: Props) => {
             const uri = result.assets[0].uri;
             setPubData({
                 ...pubData,
-                [banner]: { 
-                    ...pubData[banner], 
-                    [size]: uri 
+                [banner]: {
+                    ...pubData[banner],
+                    [size]: uri
                 }
             });
         }
@@ -46,12 +46,12 @@ const PubsSection = ({ pubData, setPubData }: Props) => {
         <View className="w-[48%] gap-y-2 mb-4">
             <Text className="text-[10px] opacity-40 font-bold uppercase ml-1">{label}</Text>
             <TouchableOpacity onPress={() => pickImage(banner, size)} className="relative">
-                <Image 
-                    source={{ uri: pubData?.[banner]?.[size] }} 
+                <Image
+                    source={{ uri: pubData?.[banner]?.[size] }}
                     className="w-full h-28 rounded-2xl bg-slate-200"
                     resizeMode="cover"
                 />
-                <View 
+                <View
                     className="absolute bottom-2 right-2 w-7 h-7 rounded-full items-center justify-center shadow-sm"
                     style={{ backgroundColor: colors.dark[100] }}
                 >
@@ -78,7 +78,7 @@ const PubsSection = ({ pubData, setPubData }: Props) => {
                 {/* TextInput الحقل النصي */}
                 <View className="gap-y-2">
                     <Text className="text-[10px] opacity-40 font-bold ml-1 uppercase">Top Bar Message (FR)</Text>
-                    <TextInput 
+                    <TextInput
                         className="p-4 rounded-2xl text-xs font-semibold"
                         style={{ backgroundColor: colors.light[100], color: colors.dark[100] }}
                         value={pubData?.topBar?.fr}

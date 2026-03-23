@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { colors } from '@/constants';
+import { isValidEmail, isValidPhone } from '@/lib';
 import { Ionicons } from '@expo/vector-icons';
 
 type ContactData = {
@@ -30,8 +31,11 @@ const ContactInfoEditor = ({ contact, setContact }: Props) => {
             {/* Email Field */}
             <View className="mb-4">
                 <Text className="text-xs mb-1 ml-1 opacity-50" style={{ color: colors.dark[100] }}>Official Email</Text>
-                <View className="flex-row items-center p-3 rounded-2xl" style={{ backgroundColor: colors.light[100] }}>
-                    <Ionicons name="mail-outline" size={20} color={colors.dark[100]} className="mr-2" />
+                <View
+                    className={`flex-row items-center p-3 rounded-2xl border ${contact.email && !isValidEmail(contact.email) ? 'border-red-500' : 'border-transparent'}`}
+                    style={{ backgroundColor: colors.light[100] }}
+                >
+                    <Ionicons name="mail-outline" size={20} color={contact.email && !isValidEmail(contact.email) ? '#ef4444' : colors.dark[100]} className="mr-2" />
                     <TextInput
                         value={contact.email}
                         onChangeText={(v) => updateField('email', v)}
@@ -42,6 +46,9 @@ const ContactInfoEditor = ({ contact, setContact }: Props) => {
                         style={{ color: colors.dark[100] }}
                     />
                 </View>
+                {contact.email && !isValidEmail(contact.email) && (
+                    <Text className="text-[10px] text-red-500 mt-1 ml-2 font-bold uppercase">Invalid email format</Text>
+                )}
             </View>
 
             {/* Mail Password Field */}
@@ -58,10 +65,10 @@ const ContactInfoEditor = ({ contact, setContact }: Props) => {
                         style={{ color: colors.dark[100] }}
                     />
                     <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                        <Ionicons 
-                            name={showPassword ? "eye-off-outline" : "eye-outline"} 
-                            size={20} 
-                            color={colors.dark[100]} 
+                        <Ionicons
+                            name={showPassword ? "eye-off-outline" : "eye-outline"}
+                            size={20}
+                            color={colors.dark[100]}
                         />
                     </TouchableOpacity>
                 </View>
@@ -70,17 +77,28 @@ const ContactInfoEditor = ({ contact, setContact }: Props) => {
             {/* Phone Number Field */}
             <View>
                 <Text className="text-xs mb-1 ml-1 opacity-50" style={{ color: colors.dark[100] }}>Phone Number</Text>
-                <View className="flex-row items-center p-3 rounded-2xl" style={{ backgroundColor: colors.light[100] }}>
-                    <Ionicons name="call-outline" size={20} color={colors.dark[100]} className="mr-2" />
+                <View
+                    className={`flex-row items-center p-3 rounded-2xl border ${contact.phone && !isValidPhone(contact.phone) ? 'border-red-500' : 'border-transparent'}`}
+                    style={{ backgroundColor: colors.light[100] }}
+                >
+                    <Ionicons name="call-outline" size={20} color={contact.phone && !isValidPhone(contact.phone) ? '#ef4444' : colors.dark[100]} className="mr-2" />
                     <TextInput
                         value={contact.phone}
-                        onChangeText={(v) => updateField('phone', v)}
+                        onChangeText={(v) => {
+                            // Only allow digits and max 8 characters
+                            const clean = v.replace(/\D/g, '').slice(0, 8);
+                            updateField('phone', clean);
+                        }}
                         placeholder="12345678"
                         keyboardType="phone-pad"
+                        maxLength={8}
                         className="flex-1 ml-2"
                         style={{ color: colors.dark[100] }}
                     />
                 </View>
+                {contact.phone && !isValidPhone(contact.phone) && (
+                    <Text className="text-[10px] text-red-500 mt-1 ml-2 font-bold uppercase">Must be exactly 8 digits</Text>
+                )}
             </View>
         </View>
     );

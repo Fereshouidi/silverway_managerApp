@@ -64,7 +64,8 @@ const Setting = () => {
                     logo: info.logo || { dark: '', light: '' },
                     homeCollections: info.homeCollections || [],
                     topCollections: info.topCollections || [],
-                    collectionsInSideBar: info.collectionsInSideBar || []
+                    collectionsInSideBar: info.collectionsInSideBar || [],
+                    aiPrompt: info.aiPrompt || ''
                 });
             }
 
@@ -129,6 +130,7 @@ const Setting = () => {
             ownerFormData.append('homeCollections', JSON.stringify(ownerInfo.homeCollections || []));
             ownerFormData.append('topCollections', JSON.stringify(ownerInfo.topCollections || []));
             ownerFormData.append('collectionsInSideBar', JSON.stringify(ownerInfo.collectionsInSideBar || []));
+            ownerFormData.append('aiPrompt', ownerInfo.aiPrompt || "");
 
             appendImageField(ownerFormData, 'logoDark', ownerInfo.logo?.dark);
             appendImageField(ownerFormData, 'logoLight', ownerInfo.logo?.light);
@@ -169,6 +171,7 @@ const Setting = () => {
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
                 <Header
                     title='setting'
+                    className=''
                     onBackButtonPress={() => router.back()}
                     items={
                         <TouchableOpacity
@@ -189,7 +192,7 @@ const Setting = () => {
 
                 <ScrollView
                     className='flex-1'
-                    contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+                    contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: 10 }}
                     refreshControl={
                         <RefreshControl
                             refreshing={refreshing}
@@ -244,6 +247,23 @@ const Setting = () => {
                                                 placeholderTextColor={`${colors.dark[100]}40`}
                                             />
                                             <Text className="font-bold text-xs opacity-40" style={{ color: colors.dark[100] }}>D.T</Text>
+                                        </View>
+                                    </View>
+                                    {/* AI Prompt Input */}
+                                    <View>
+                                        <Text className="text-[10px] opacity-40 font-bold ml-1 mb-2 uppercase tracking-widest">AI Instructions (Manager Rules)</Text>
+                                        <View className="flex-row items-top rounded-2xl px-4 py-2" style={{ backgroundColor: colors.light[100] }}>
+                                            <MaterialCommunityIcons name="robot-outline" size={20} color={colors.dark[100]} style={{ opacity: 0.5, marginTop: 12 }} />
+                                            <TextInput
+                                                value={ownerInfo.aiPrompt}
+                                                onChangeText={(v) => setOwnerInfo({ ...ownerInfo, aiPrompt: v })}
+                                                className="flex-1 p-4 text-sm font-semibold"
+                                                style={{ color: colors.dark[100], minHeight: 120 }}
+                                                placeholder="Enter rules for the AI assistant..."
+                                                placeholderTextColor={`${colors.dark[100]}40`}
+                                                multiline
+                                                textAlignVertical="top"
+                                            />
                                         </View>
                                     </View>
                                 </View>

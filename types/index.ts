@@ -1,6 +1,6 @@
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { CSSProperties, Ref } from "react";
-import { GestureResponderEvent, ImageSourcePropType, TextInput } from "react-native";
+import { GestureResponderEvent, ImageSourcePropType, StyleProp, TextInput, TextStyle, ViewStyle } from "react-native";
 
 
 type language = {
@@ -143,6 +143,7 @@ export type OwnerInfoType = {
   topCollections: string[];  // IDs
   collectionsInSideBar: string[]; // IDs
   shippingCost: number;
+  aiPrompt: string;
 }
 
 export type ProductSpecification = {
@@ -153,6 +154,7 @@ export type ProductSpecification = {
   type?: string | null;
   price?: number | null;
   quantity?: number | null;
+  unlimited?: boolean;
 }
 
 export type ProductImage = {
@@ -167,6 +169,7 @@ export type ProductToEditType = {
     en: string | null;
   };
   price: string | null;
+  oldPrice: string | null;
   thumbNail: string | null;
   images: string[];
   description: {
@@ -176,6 +179,7 @@ export type ProductToEditType = {
   collections: string[];
   stock: number | null;
   specifications: ProductSpecificationToEdit[];
+  status?: "active" | "archived" | "deleted";
   createdAt?: Date | null;
   updatedAt?: Date | null;
 }
@@ -188,6 +192,7 @@ export type ProductSpecificationToEdit = {
   type?: string | null;
   price?: string | null;
   quantity?: number | null;
+  unlimited?: boolean;
 }
 
 export type ProductType = {
@@ -197,11 +202,12 @@ export type ProductType = {
     en: string | null;
   };
   price: number | null;
+  oldPrice: number | null;
   thumbNail: string | null;
-  images: [{
+  images: {
     uri: string,
     specification: ProductSpecification;
-  }];
+  }[];
   description: {
     fr: string | null;
     en: string | null;
@@ -272,7 +278,6 @@ export type AdminType = {
   phone?: number;
   password?: string;
   token?: string;
-  pushToken?: string | null;
   devices?: string[];
   accesses: AdminAccess[];
   type: AdminTypes;
@@ -297,6 +302,7 @@ export type AdminAccess =
   | "Manage Orders"
   | "Manage Staff"
   | "Control Settings"
+  | "Open notifications page"
   ;
 
 export interface OrderType {
@@ -369,8 +375,10 @@ export interface ButtonParams {
   className?: string,
   textClassName?: string,
   isWork: boolean,
-  textStyle?: CSSProperties,
-  style?: CSSProperties
+  textStyle?: StyleProp<TextStyle>,
+  style?: StyleProp<ViewStyle>,
+  iconStyle?: StyleProp<any>
+  iconClassName?: string
 }
 
 export type WelcomeProps = {

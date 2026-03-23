@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    View, 
-    TextInput, 
-    TouchableOpacity, 
-    ActivityIndicator, 
-    StyleSheet 
+import {
+    View,
+    TextInput,
+    TouchableOpacity,
+    ActivityIndicator,
+    StyleSheet
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
@@ -30,11 +30,11 @@ const SearchBar = ({ setProducts }: Props) => {
                 limit: 20,
                 skip: 0,
                 filtration: {}, // فارغة كما طلبت
-                status: JSON.stringify(["active"]) // لتمر من JSON.parse في السيرفر
+                status: JSON.stringify(["active", "archived"]) // لتمر من JSON.parse في السيرفر
             });
 
             console.log(data);
-            
+
             // تعيين المنتجات بناءً على هيكلة الـ result الراجعة
             setProducts(data.products || []);
         } catch (err: any) {
@@ -55,11 +55,11 @@ const SearchBar = ({ setProducts }: Props) => {
 
     return (
         <View style={styles.container}>
-            <View 
+            <View
                 className="w-[90%] h-[54px] rounded-2xl flex-row items-center px-4 border-[0.5px]"
-                style={{ 
-                    backgroundColor: colors.light[100], 
-                    borderColor: colors.light[300] 
+                style={{
+                    backgroundColor: colors.light[100],
+                    borderColor: colors.light[300]
                 }}
             >
                 <Ionicons name="search" size={20} color={colors.dark[400]} />
@@ -91,7 +91,7 @@ const SearchBar = ({ setProducts }: Props) => {
 const styles = StyleSheet.create({
     container: {
         width: '100%',
-        backgroundColor: colors.light[100],
+        backgroundColor: colors.light[150],
         paddingVertical: 10,
         alignItems: 'center',
         justifyContent: 'center',

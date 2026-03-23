@@ -77,7 +77,7 @@ const OfflineScreen: React.FC<OfflineScreenProps> = ({ onRetry }) => {
                 className="absolute bottom-12"
             >
                 <Text className="text-white/20 text-[10px] font-bold uppercase tracking-[4px]">
-                    Wassim Management System
+                    Silverway Management System
                 </Text>
             </MotiView>
         </SafeAreaView>

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "906363940995",
+    "project_id": "sample-firebase-ai-app-7e04e",
+    "storage_bucket": "sample-firebase-ai-app-7e04e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:906363940995:android:8bdc144daf28529b61ebb6",
+        "android_client_info": {
+          "package_name": "com.fareshouidi.manager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJZAFsBs2Hag1l0PVeD7XQLzvSwLuM2JY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

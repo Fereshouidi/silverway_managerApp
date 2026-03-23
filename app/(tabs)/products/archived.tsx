@@ -7,45 +7,45 @@ import React, { CSSProperties } from 'react';
 import { View } from 'react-native';
 
 type props = {
-  productSectionVisible?: boolean
-  setProductSectionVisibile?: (value: boolean) => void
-  product?: ProductType
-  className?: String
-  style?: CSSProperties
-  openProduct?: ProductType | null
-  setOpenProduct?: (value: ProductType | null) => void
-  selectedProducts?: ProductType[]
-  setSelectedProducts?: (value: ProductType[]) => void
-  searchBarActive: boolean,
-  setSearchBarActive: (value: boolean) => void
-  productsSelected: string[],
-  setProductsSelected: (value: string[]) => void
-  products: ProductType[],
-  setProducts: (value: ProductType[]) => void
+    productSectionVisible?: boolean
+    setProductSectionVisibile?: (value: boolean) => void
+    product?: ProductType
+    className?: String
+    style?: CSSProperties
+    openProduct?: ProductType | null
+    setOpenProduct?: (value: ProductType | null) => void
+    selectedProducts?: ProductType[]
+    setSelectedProducts?: (value: ProductType[]) => void
+    searchBarActive: boolean, 
+    setSearchBarActive: (value: boolean) => void
+    productsSelected: string[], 
+    setProductsSelected: (value: string[]) => void
+    products: ProductType[],
+    setProducts: (value: ProductType[]) => void
 }
 
-const Products = ({
+const ArchivedProducts = ({
   productSectionVisible,
   setProductSectionVisibile,
   searchBarActive,
   setSearchBarActive,
-  productsSelected,
+  productsSelected, 
   setProductsSelected,
-  products,
+  products, 
   setProducts,
 }: props) => {
 
-  const { productSectionActive, setProductSectionActive } = useProductSection();
+  const {productSectionActive, setProductSectionActive} = useProductSection();
 
 
   return (
-    <View
+    <View 
       className='w-full h-full p-0'
       style={{
         backgroundColor: colors.light[150],
         width: '100%',
         height: '100%',
-
+        
       }}
     >
 
@@ -60,6 +60,7 @@ const Products = ({
       >
         <SearchBar
           setProducts={setProducts}
+          status={["archived"]}
         />
       </View>
 
@@ -67,12 +68,13 @@ const Products = ({
         products={products}
         setProducts={setProducts}
         className={`${searchBarActive && "mt-[75px]"}`}
-        productsSelected={productsSelected}
+        productsSelected={productsSelected} 
         setProductsSelected={setProductsSelected}
+        status={["archived"]}
       />
 
 
     </View>
   );
 }
-export default Products;
+export default ArchivedProducts;

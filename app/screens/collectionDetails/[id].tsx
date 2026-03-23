@@ -9,12 +9,15 @@ import { useLoadingScreen } from '@/contexts/loadingScreen'
 import { useStatusBanner } from '@/contexts/StatusBanner'
 import { pickImage } from '@/lib'
 import { CollectionType, ProductType } from '@/types/index'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 import axios from 'axios'
 import * as ImageManipulator from 'expo-image-manipulator'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import React, { useEffect, useState } from 'react'
 import { Image, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { useBanner } from '@/contexts/yesNoBanner'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { Eye, EyeOff, LayoutGrid, LayoutList, Package, Trash2, Plus, AlertTriangle } from 'lucide-react-native'
 
 type Props = {
     visibility: boolean
@@ -27,8 +30,10 @@ type Props = {
 }
 
 const CollectionSection = ({ className }: Props) => {
-    const { id } = useLocalSearchParams();
+    const params = useLocalSearchParams();
+    const id = Array.isArray(params.id) ? params.id[0] : params.id;
     const { setLoadingScreen } = useLoadingScreen();
+    const { showBanner } = useBanner();
 
     const [loading, setLoading] = useState<boolean>(true);
     const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
@@ -47,11 +52,23 @@ const CollectionSection = ({ className }: Props) => {
                     params: { collectionId: id }
                 });
                 setUpdatedCollection(data.collection);
-                setProductsSelected(data.products)
-                if (data.collection.products) setProductsSelected(data.collection.products);
+                setProductsSelected(data.collection.products || []);
+
+                // Merge preview products into the main list so thumbnails are available immediately
+                if (data.previewProducts) {
+                    setProducts(prev => {
+                        const existingIds = new Set(prev.map(p => p._id));
+                        const newOnes = data.previewProducts.filter((p: ProductType) => !existingIds.has(p._id));
+                        return [...prev, ...newOnes];
+                    });
+                }
 
                 const productsRes = await axios.get(backEndUrl + "/getProducts");
-                setProducts(productsRes.data.products);
+                setProducts(prev => {
+                    const existingIds = new Set(prev.map(p => p._id));
+                    const newOnes = productsRes.data.products.filter((p: ProductType) => !existingIds.has(p._id));
+                    return [...prev, ...newOnes];
+                });
             } catch (err) {
                 console.log('Error fetching data:', err);
             } finally {
@@ -131,17 +148,21 @@ const CollectionSection = ({ className }: Props) => {
                 title='Edit Collection'
                 onBackButtonPress={() => router.back()}
                 items={
-                    <TouchableOpacity
-                        onPress={handleConfirm}
-                        className='h-10 w-10 flex justify-center items-center rounded-full mr-4 shadow-sm-'
-                    // style={{ backgroundColor: colors.dark[100] }}
-                    >
-                        <Image
-                            source={require('@/app/assets/icons/tick.png')}
-                            className='w-5 h-5'
-                            style={{ tintColor: colors.dark[100] }}
-                        />
-                    </TouchableOpacity>
+                    <View className='flex-row items-center gap-x-3-'>
+                        <TouchableOpacity
+                            onPress={handleConfirm}
+                            activeOpacity={0.8}
+                            className='w-11 h-11 px-5- flex-row justify-center items-center rounded-full shadow-sm'
+                            style={{ backgroundColor: colors.dark[100] }}
+                        >
+                            <MaterialCommunityIcons
+                                name="check"
+                                size={20}
+                                color={colors.light[100]}
+                            />
+                            {/* <Text className='font-bold ml-2' style={{ color: colors.light[100] }}>Save</Text> */}
+                        </TouchableOpacity>
+                    </View>
                 }
             />
 
@@ -149,7 +170,7 @@ const CollectionSection = ({ className }: Props) => {
                 className='flex-1'
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
-                contentContainerStyle={{ paddingBottom: 40 }}
+                contentContainerStyle={{ paddingBottom: 0 }}
             >
                 {/* Image Picker Section */}
                 <View className='items-center py-8'>
@@ -181,15 +202,21 @@ const CollectionSection = ({ className }: Props) => {
                     </TouchableOpacity>
                 </View>
 
-                <View className='px-5 gap-y-6'>
+                <View className='px-5 gap-y-5'>
                     {/* Name Input Card */}
-                    <View className='bg-white p-5 rounded-3xl shadow-sm border border-gray-50'>
-                        <Text className='font-bold text-sm mb-3' style={{ color: colors.dark[100] }}>Collection Name</Text>
+                    <View className='bg-white p-6 rounded-[32px] shadow-sm border border-gray-100/50'>
+                        <View className='flex-row items-center mb-4'>
+                            <View className='w-8 h-8 rounded-full items-center justify-center mr-3' style={{ backgroundColor: colors.light[200] }}>
+                                <MaterialCommunityIcons name="format-text" size={16} color={colors.dark[100]} />
+                            </View>
+                            <Text className='font-bold text-base' style={{ color: colors.dark[100] }}>Collection Name</Text>
+                        </View>
                         <TextInput
-                            placeholder='Enter collection name...'
+                            placeholder='e.g. Summer Essentials 2024'
+                            placeholderTextColor={colors.dark[100] + '40'}
                             defaultValue={updatedCollection?.name.fr ?? ""}
-                            className='w-full h-14 px-5 rounded-2xl font-medium'
-                            style={{ backgroundColor: colors.light[200], color: colors.dark[100] }}
+                            className='w-full h-14 px-5 rounded-2xl font-semibold'
+                            style={{ backgroundColor: colors.light[150], color: colors.dark[100] }}
                             onChangeText={(e) => setUpdatedCollection({
                                 ...updatedCollection,
                                 name: { ...updatedCollection.name, fr: e }
@@ -198,61 +225,147 @@ const CollectionSection = ({ className }: Props) => {
                     </View>
 
                     {/* Visibility Settings Card */}
-                    <View className='bg-white p-5 rounded-3xl shadow-sm border border-gray-50'>
-                        <Text className='font-bold text-sm mb-4' style={{ color: colors.dark[100] }}>Visibility Status</Text>
-                        <View className='flex-row p-1.5 rounded-2xl' style={{ backgroundColor: colors.light[200] }}>
-                            {['public', 'private'].map((type) => (
+                    <View className='bg-white p-6 rounded-[32px] shadow-sm border border-gray-100/50'>
+                        <View className='flex-row items-center mb-5'>
+                            <View className='w-8 h-8 rounded-full items-center justify-center mr-3' style={{ backgroundColor: colors.light[200] }}>
+                                <Eye size={16} color={colors.dark[100]} />
+                            </View>
+                            <Text className='font-bold text-base' style={{ color: colors.dark[100] }}>Visibility Status</Text>
+                        </View>
+                        <View className='flex-row gap-x-3'>
+                            {[
+                                { id: 'public', label: 'Public', icon: Eye, desc: 'Visible to everyone' },
+                                { id: 'private', label: 'Private', icon: EyeOff, desc: 'Only for admins' }
+                            ].map((opt) => (
                                 <TouchableOpacity
-                                    key={type}
-                                    onPress={() => setUpdatedCollection({ ...updatedCollection, type: type as any })}
-                                    className='flex-1 py-3.5 rounded-xl items-center'
-                                    style={{ backgroundColor: updatedCollection.type === type ? colors.dark[100] : 'transparent' }}
+                                    key={opt.id}
+                                    activeOpacity={0.9}
+                                    onPress={() => setUpdatedCollection({ ...updatedCollection, type: opt.id as any })}
+                                    className='flex-1 p-4 rounded-2xl border-2'
+                                    style={{
+                                        backgroundColor: updatedCollection.type === opt.id ? colors.dark[100] : colors.light[150],
+                                        borderColor: updatedCollection.type === opt.id ? colors.dark[100] : 'transparent'
+                                    }}
                                 >
-                                    <Text className='font-bold capitalize' style={{ color: updatedCollection.type === type ? colors.light[100] : colors.dark[100] }}>
-                                        {type}
-                                    </Text>
+                                    <opt.icon size={20} color={updatedCollection.type === opt.id ? colors.light[100] : colors.dark[100]} />
+                                    <Text className='font-bold text-sm mt-2' style={{ color: updatedCollection.type === opt.id ? colors.light[100] : colors.dark[100] }}>{opt.label}</Text>
+                                    <Text className='text-[10px] opacity-50 mt-0.5' style={{ color: updatedCollection.type === opt.id ? colors.light[100] : colors.dark[100] }}>{opt.desc}</Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
                     </View>
 
                     {/* Display Style Card */}
-                    <View className='bg-white p-5 rounded-3xl shadow-sm border border-gray-50'>
-                        <Text className='font-bold text-sm mb-4' style={{ color: colors.dark[100] }}>Home Display Style</Text>
-                        <View className='flex-row p-1.5 rounded-2xl' style={{ backgroundColor: colors.light[200] }}>
+                    <View className='bg-white p-6 rounded-[32px] shadow-sm border border-gray-100/50'>
+                        <View className='flex-row items-center mb-5'>
+                            <View className='w-8 h-8 rounded-full items-center justify-center mr-3' style={{ backgroundColor: colors.light[200] }}>
+                                <LayoutGrid size={16} color={colors.dark[100]} />
+                            </View>
+                            <Text className='font-bold text-base' style={{ color: colors.dark[100] }}>Home Display Style</Text>
+                        </View>
+                        <View className='flex-row gap-x-3'>
                             {[
-                                { label: 'Grid (Normal)', value: 'vertical' },
-                                { label: 'Slider', value: 'horizontal' }
-                            ].map((option) => (
+                                { id: 'vertical', label: 'Grid', icon: LayoutGrid, desc: 'Normal 2x2 layout' },
+                                { id: 'horizontal', label: 'Slider', icon: LayoutList, desc: 'Horizontal scroll' }
+                            ].map((opt) => (
                                 <TouchableOpacity
-                                    key={option.value}
-                                    onPress={() => setUpdatedCollection({ ...updatedCollection, display: option.value as any })}
-                                    className='flex-1 py-3.5 rounded-xl items-center'
-                                    style={{ backgroundColor: updatedCollection.display === option.value ? colors.dark[100] : 'transparent' }}
+                                    key={opt.id}
+                                    activeOpacity={0.9}
+                                    onPress={() => setUpdatedCollection({ ...updatedCollection, display: opt.id as any })}
+                                    className='flex-1 p-4 rounded-2xl border-2'
+                                    style={{
+                                        backgroundColor: updatedCollection.display === opt.id ? colors.dark[100] : colors.light[150],
+                                        borderColor: updatedCollection.display === opt.id ? colors.dark[100] : 'transparent'
+                                    }}
                                 >
-                                    <Text className='font-bold' style={{ color: updatedCollection.display === option.value ? colors.light[100] : colors.dark[100] }}>
-                                        {option.label}
-                                    </Text>
+                                    <opt.icon size={20} color={updatedCollection.display === opt.id ? colors.light[100] : colors.dark[100]} />
+                                    <Text className='font-bold text-sm mt-2' style={{ color: updatedCollection.display === opt.id ? colors.light[100] : colors.dark[100] }}>{opt.label}</Text>
+                                    <Text className='text-[10px] opacity-50 mt-0.5' style={{ color: updatedCollection.display === opt.id ? colors.light[100] : colors.dark[100] }}>{opt.desc}</Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
                     </View>
 
                     {/* Products Management Card */}
-                    <View className='bg-white p-6 rounded-3xl shadow-sm border border-gray-50 mb-10'>
-                        <View className='flex-row items-center justify-between'>
-                            <View>
-                                <Text className='font-bold text-lg' style={{ color: colors.dark[100] }}>Products</Text>
-                                <Text className='text-xs opacity-50' style={{ color: colors.dark[100] }}>{productsSelected.length} products linked</Text>
+                    <View className='bg-white p-6 rounded-[32px] shadow-sm border border-gray-100/50 mb-10'>
+                        <View className='flex-row items-center justify-between mb-5'>
+                            <View className='flex-row items-center'>
+                                <View className='w-8 h-8 rounded-full items-center justify-center mr-3' style={{ backgroundColor: colors.light[200] }}>
+                                    <Package size={16} color={colors.dark[100]} />
+                                </View>
+                                <Text className='font-bold text-base' style={{ color: colors.dark[100] }}>Products</Text>
                             </View>
-                            <TouchableOpacity
-                                onPress={() => setIsModalVisible(true)}
-                                className='px-6 py-3 rounded-2xl'
-                                style={{ backgroundColor: colors.dark[100] }}
-                            >
-                                <Text style={{ color: colors.light[100] }} className='font-bold'>Manage List</Text>
-                            </TouchableOpacity>
+                            <Text className='text-xs font-black' style={{ color: colors.dark[100], opacity: 0.3 }}>{productsSelected.length} TOTAL</Text>
                         </View>
+
+                        {productsSelected.length > 0 ? (
+                            <View className='flex-row items-center mb-6 py-1'>
+                                {products.filter(p => productsSelected.includes(p._id as string)).slice(0, 4).map((p, i) => (
+                                    <View
+                                        key={p._id}
+                                        className='w-12 h-12 rounded-full border-2 border-white bg-gray-100'
+                                        style={{ zIndex: 10 - i, marginLeft: i === 0 ? 0 : -20 }}
+                                    >
+                                        <Image source={{ uri: p.thumbNail || '' }} className='w-full h-full rounded-full' />
+                                    </View>
+                                ))}
+                                {productsSelected.length > 4 && (
+                                    <View className='w-12 h-12 rounded-full border-2 border-white bg-gray-200 items-center justify-center' style={{ zIndex: 0, marginLeft: -20 }}>
+                                        <Text className='text-[10px] font-black'>+{productsSelected.length - 4}</Text>
+                                    </View>
+                                )}
+                                <Text className='ml-4 text-xs font-bold text-gray-400'>Linked to collection</Text>
+                            </View>
+                        ) : (
+                            <View className='items-center py-4 opacity-30'>
+                                <Package size={32} color={colors.dark[100]} />
+                                <Text className='text-[10px] font-bold uppercase tracking-[1px] mt-2'>No products selected</Text>
+                            </View>
+                        )}
+
+                        <TouchableOpacity
+                            onPress={() => setIsModalVisible(true)}
+                            activeOpacity={0.8}
+                            className='w-full py-4 rounded-2xl items-center flex-row justify-center'
+                            style={{ backgroundColor: colors.dark[100] }}
+                        >
+                            <Plus size={18} color={colors.light[100]} />
+                            <Text style={{ color: colors.light[100] }} className='font-black ml-2 uppercase text-xs tracking-[1px]'>Manage Product List</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Dangerous Zone */}
+                    <View className='px-5 mt-10 mb-20'>
+                        <Text className='text-[10px] font-bold uppercase tracking-[2px] mb-4 opacity-30 text-center'>Sensitive Actions</Text>
+                        <TouchableOpacity
+                            onPress={async () => {
+                                if (!admin?.accesses?.includes("Manage Collections")) {
+                                    setStatusBanner(true, "Permission denied", "error");
+                                    return;
+                                }
+                                showBanner({
+                                    message: "Are you sure you want to delete this collection? This action is permanent.",
+                                    onConfirm: async () => {
+                                        setLoadingScreen(true, "Deleting...");
+                                        try {
+                                            await axios.put(`${backEndUrl}/deleteCollections`, { ids: [id] });
+                                            setStatusBanner(true, "Deleted successfully ✅", "success");
+                                            router.back();
+                                        } catch (err) {
+                                            setStatusBanner(true, "Could not delete collection", "error");
+                                        } finally {
+                                            setLoadingScreen(false);
+                                        }
+                                    }
+                                });
+                            }}
+                            activeOpacity={0.8}
+                            className='w-full py-5 rounded-[24px] items-center flex-row justify-center border-2'
+                            style={{ borderColor: '#fee2e2' }}
+                        >
+                            <Trash2 size={18} color="#dc2626" />
+                            <Text className='font-black ml-3 uppercase text-xs tracking-[1px]' style={{ color: '#dc2626' }}>Delete Collection</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </ScrollView>
@@ -295,7 +408,7 @@ const CollectionSection = ({ className }: Props) => {
                             setProducts={setProducts}
                             productsSelected={productsSelected}
                             setProductsSelected={setProductsSelected}
-                            collectionId={id}
+                            collectionId={id as string}
                         />
                     </View>
                 </SafeAreaView>

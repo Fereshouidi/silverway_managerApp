@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { router, Tabs } from 'expo-router';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import Header from '@/components/main/header';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
@@ -13,6 +13,7 @@ import { useLoadingScreen } from '@/contexts/loadingScreen';
 import axios from 'axios';
 import { backEndUrl } from '@/api';
 import OrderDetailsModal from '@/app/screens/orderDetailsModal';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -27,9 +28,14 @@ export default function TabLayout() {
     const [pendingOrdersCount, setPendingOrdersCounts] = useState<number>(0);
     const [failedOrdersCount, setFailedOrdersCounts] = useState<number>(0);
     const [deliveredOrdersCount, setDeliveredOrdersCounts] = useState<number>(0);
+    const [refreshKey, setRefreshKey] = useState<number>(0);
 
     // --- Callbacks (Optimized) ---
-    // استخدام useCallback يضمن أن الدوال لا تتغير عناوينها في الذاكرة
+    const handleUpdateSuccess = useCallback(() => {
+        get_status_counts();
+        setRefreshKey(prev => prev + 1);
+    }, []);
+
     const openOrderDetails = useCallback((order: OrderType) => {
         setSelectedOrder(order);
         setModalVisible(true);
@@ -67,20 +73,21 @@ export default function TabLayout() {
     // --- UI Optimization (Memoized Modal) ---
     // هذا الجزء هو السر في السرعة: المودال لن يعيد الرندرة إلا إذا تغير الطلب المختار
     const renderModal = useMemo(() => (
-        <OrderDetailsModal 
-            isVisible={isModalVisible} 
-            onClose={closeOrderDetails} 
-            order={selectedOrder} 
+        <OrderDetailsModal
+            isVisible={isModalVisible}
+            onClose={closeOrderDetails}
+            order={selectedOrder}
             deliveryWorker={deliveryWorker}
+            onUpdateSuccess={handleUpdateSuccess}
         />
-    ), [isModalVisible, selectedOrder, deliveryWorker, closeOrderDetails]);
+    ), [isModalVisible, selectedOrder, deliveryWorker, closeOrderDetails, handleUpdateSuccess]);
 
     return (
-        <View className='w-full h-full' style={{ backgroundColor: colors.light[100] }}>
+        <SafeAreaView className='w-full h-full' style={{ backgroundColor: colors.light[100] }}>
             {/* Safe Area Background Fix */}
-            <View className='w-full h-[45px]' style={{ backgroundColor: colors.light[100] }} />
-            
-            <Header title='orders' />
+            {/* <View className='w-full h-[45px]' style={{ backgroundColor: colors.light[100] }} /> */}
+
+            <Header title='orders' className='h-7-' onBackButtonPress={() => router.back()} />
 
             <Tab.Navigator
                 initialRouteName="Pending"
@@ -92,48 +99,51 @@ export default function TabLayout() {
                     swipeEnabled: true,
                 }}
             >
-                <Tab.Screen 
+                <Tab.Screen
                     name="Pending"
                     options={{ title: `Pending (${pendingOrdersCount})` }}
                 >
-                    {() => <Pending 
+                    {() => <Pending
                         pendingOrdersCount={pendingOrdersCount}
                         setPendingOrdersCounts={setPendingOrdersCounts}
                         deliveryWorker={deliveryWorker}
                         setDeliveryWorker={setDeliveryWorker}
                         onOrderPress={openOrderDetails}
+                        refreshKey={refreshKey}
                     />}
                 </Tab.Screen>
 
-                <Tab.Screen 
+                <Tab.Screen
                     name="Failed"
                     options={{ title: `Failed (${failedOrdersCount})` }}
-                >                       
+                >
                     {() => <Failed
                         failedOrdersCount={failedOrdersCount}
                         setFailedOrdersCounts={setFailedOrdersCounts}
                         deliveryWorker={deliveryWorker}
                         setDeliveryWorker={setDeliveryWorker}
                         onOrderPress={openOrderDetails}
+                        refreshKey={refreshKey}
                     />}
                 </Tab.Screen>
 
-                <Tab.Screen 
+                <Tab.Screen
                     name="Delivered"
                     options={{ title: `Delivered (${deliveredOrdersCount})` }}
-                >                       
-                    {() => <Delivered 
+                >
+                    {() => <Delivered
                         deliveredOrdersCount={deliveredOrdersCount}
                         setDeliveredOrdersCounts={setDeliveredOrdersCounts}
                         deliveryWorker={deliveryWorker}
                         setDeliveryWorker={setDeliveryWorker}
                         onOrderPress={openOrderDetails}
+                        refreshKey={refreshKey}
                     />}
                 </Tab.Screen>
             </Tab.Navigator>
 
             {/* المودال المركزي: الآن يعمل خارج سياق الـ Tabs لضمان السرعة */}
             {renderModal}
-        </View>
+        </SafeAreaView>
     );
 }

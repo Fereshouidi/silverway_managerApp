@@ -2,6 +2,7 @@ import { backEndUrl } from '@/api';
 import { colors } from '@/constants';
 import { accessesDispo } from '@/constants/data';
 import { useStatusBanner } from '@/contexts/StatusBanner';
+import { isValidEmail, isValidPhone } from '@/lib';
 import { AdminAccess, AdminType } from '@/types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import axios from 'axios';
@@ -18,7 +19,8 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
+    Alert
 } from 'react-native';
 
 const AdminProfileScreen = () => {
@@ -53,6 +55,17 @@ const AdminProfileScreen = () => {
     const handleSave = async () => {
         if (!formData) return;
 
+        // Validation
+        if (formData.email && !isValidEmail(formData.email)) {
+            setStatusBanner(true, "Please provide a valid email address.", "warning");
+            return;
+        }
+
+        if (formData.phone && !isValidPhone(String(formData.phone))) {
+            setStatusBanner(true, "Phone number must be exactly 8 digits.", "warning");
+            return;
+        }
+
         setLoading(true);
         Keyboard.dismiss();
 
@@ -61,7 +74,7 @@ const AdminProfileScreen = () => {
 
             if (data.success) {
                 // 1. اهتزاز النجاح (شعور ملموس بالنجاح)
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                // Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
                 // 2. تحديث البيانات محلياً
                 setAdmin(formData);
@@ -96,6 +109,81 @@ const AdminProfileScreen = () => {
             ? current.filter(i => i !== accessItem)
             : [...current, accessItem as any];
         setFormData({ ...formData, accesses: updated });
+    };
+
+    const handleDelete = async () => {
+        Alert.alert(
+            "Delete Admin",
+            "Are you sure you want to completely delete this admin? This action cannot be undone.",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        setLoading(true);
+                        try {
+                            const { data } = await axios.delete(`${backEndUrl}/deleteAdmin`, {
+                                params: { id: id }
+                            });
+                            if (data.success) {
+                                setStatusBanner(true, "Admin deleted successfully", "success");
+                                router.back();
+                            }
+                        } catch (error) {
+                            setStatusBanner(true, "Failed to delete admin", "error");
+                        } finally {
+                            setLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const handleDismiss = async () => {
+        if (!admin) return;
+
+        // Case 1: Admin is already eliminated -> Reactivate
+        if ((admin.accesses?.length || 0) === 0) {
+            setIsEditing(true);
+            setStatusBanner(true, "Assign permissions to reactivate this admin.", "success");
+            return;
+        }
+
+        // Case 2: Admin is active -> Eliminate
+        Alert.alert(
+            "Eliminate Admin",
+            "This will deactivate the admin and remove all their accesses. Do you want to proceed?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Eliminate",
+                    style: "destructive",
+                    onPress: async () => {
+                        setLoading(true);
+                        try {
+                            const updatedData = {
+                                ...admin,
+                                isVerified: false,
+                                accesses: []
+                            };
+                            const { data } = await axios.put(`${backEndUrl}/updateAdmin`, { updatedRow: updatedData });
+                            if (data.success) {
+                                setAdmin(updatedData);
+                                setFormData(updatedData);
+                                setStatusBanner(true, "Admin has been eliminated/deactivated", "success");
+                                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                            }
+                        } catch (error) {
+                            setStatusBanner(true, "Failed to eliminate admin", "error");
+                        } finally {
+                            setLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     if (!admin || !formData) {
@@ -153,12 +241,25 @@ const AdminProfileScreen = () => {
                     {!isEditing ?
                         (
                             <View className="flex-row items-center mb-8 bg-white p-4 rounded-[30px] border border-gray-100 shadow-sm">
-                                <View className="w-14 h-14 bg-black rounded-2xl items-center justify-center">
-                                    <MaterialCommunityIcons name="shield-account" size={30} color="white" />
+                                <View className={`w-14 h-14 rounded-2xl items-center justify-center ${admin.isVerified && admin.accesses?.length > 0 ? 'bg-black' : 'bg-gray-100'}`}>
+                                    <MaterialCommunityIcons
+                                        name={admin.isVerified && admin.accesses?.length > 0 ? "shield-check" : "shield-off"}
+                                        size={30}
+                                        color={admin.isVerified && admin.accesses?.length > 0 ? "white" : "#9ca3af"}
+                                    />
                                 </View>
-                                <View className="ml-4">
-                                    <Text className="text-xs font-bold text-black/40 uppercase tracking-widest">{admin.type}</Text>
-                                    <Text className="text-lg font-black text-black">Master Access</Text>
+                                <View className="ml-4 flex-1">
+                                    <View className="flex-row items-center justify-between">
+                                        <Text className="text-xs font-bold text-black/40 uppercase tracking-widest">{admin.type}</Text>
+                                        <View className={`px-2 py-0.5 rounded-full ${admin.isVerified && admin.accesses?.length > 0 ? 'bg-emerald-50' : 'bg-amber-50'}`}>
+                                            <Text className={`text-[8px] font-black uppercase ${admin.isVerified && admin.accesses?.length > 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                                {admin.isVerified && admin.accesses?.length > 0 ? 'STATUS: ACTIVE' : (admin.accesses?.length === 0 ? 'STATUS: ELIMINATED' : 'STATUS: PENDING')}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    <Text className="text-lg font-black text-black">
+                                        {admin.isVerified && admin.accesses?.length > 0 ? 'Master Access' : 'Access Restricted'}
+                                    </Text>
                                 </View>
                             </View>
                         )
@@ -200,26 +301,48 @@ const AdminProfileScreen = () => {
                             { label: 'Full Name', icon: 'account-outline', key: 'fullName' as const },
                             { label: 'Email', icon: 'email-outline', key: 'email' as const, keyboard: 'email-address' as const },
                             { label: 'Phone', icon: 'phone-outline', key: 'phone' as const, keyboard: 'phone-pad' as const }
-                        ].map((item, idx) => (
-                            <View key={idx} className={`mb-6 ${idx === 2 ? 'mb-0' : ''}`}>
-                                <View className="flex-row items-center mb-2">
-                                    <MaterialCommunityIcons name={item.icon as any} size={16} color={colors.dark[100]} />
-                                    <Text className="text-[10px] font-bold text-black/40 uppercase ml-2 tracking-tighter">{item.label}</Text>
+                        ].map((item, idx) => {
+                            const isEmail = item.key === 'email';
+                            const isPhone = item.key === 'phone';
+                            const value = String((formData as any)[item.key] || "");
+
+                            const isInvalidEmail = isEmail && value && !isValidEmail(value);
+                            const isInvalidPhone = isPhone && value && !isValidPhone(value);
+                            const isInvalid = isInvalidEmail || isInvalidPhone;
+
+                            return (
+                                <View key={idx} className={`mb-6 ${idx === 2 ? 'mb-0' : ''}`}>
+                                    <View className="flex-row items-center mb-2">
+                                        <MaterialCommunityIcons name={item.icon as any} size={16} color={isInvalid ? "#ef4444" : colors.dark[100]} />
+                                        <Text className={`text-[10px] font-bold uppercase ml-2 tracking-tighter ${isInvalid ? 'text-red-500' : 'text-black/40'}`}>{item.label}</Text>
+                                    </View>
+                                    {isEditing ? (
+                                        <TextInput
+                                            className={`text-base font-bold text-black border-b pb-2 ${isInvalid ? 'border-red-500' : 'border-gray-200'}`}
+                                            value={value}
+                                            onChangeText={(text) => {
+                                                let val = text;
+                                                if (isPhone) {
+                                                    val = text.replace(/\D/g, '').slice(0, 8);
+                                                }
+                                                setFormData({ ...formData, [item.key]: val });
+                                            }}
+                                            keyboardType={item.keyboard || 'default'}
+                                            autoCapitalize="none"
+                                            maxLength={isPhone ? 8 : undefined}
+                                        />
+                                    ) : (
+                                        <Text className="text-base font-bold text-black">{String((admin as any)[item.key] || '---')}</Text>
+                                    )}
+                                    {isEditing && isInvalidEmail && (
+                                        <Text className="text-[9px] text-red-500 font-bold mt-1 uppercase">Invalid email format</Text>
+                                    )}
+                                    {isEditing && isInvalidPhone && (
+                                        <Text className="text-[9px] text-red-500 font-bold mt-1 uppercase">Must be 8 digits</Text>
+                                    )}
                                 </View>
-                                {isEditing ? (
-                                    <TextInput
-                                        className="text-base font-bold text-black border-b border-gray-200 pb-2"
-                                        value={String((formData as any)[item.key] || "")}
-                                        onChangeText={(text) => setFormData({ ...formData, [item.key]: text })}
-                                        keyboardType={item.keyboard || 'default'}
-                                        autoCapitalize="none"
-                                    />
-                                ) : (
-                                    <Text className="text-base font-bold text-black">{String((admin as any)[item.key] || '---')}</Text>
-                                )}
-                                {/* <Text>generational_status: "SUCCESS"</Text> */}
-                            </View>
-                        ))}
+                            );
+                        })}
                     </View>
 
                     <View className="bg-white rounded-[35px] p-6 border border-gray-100 shadow-sm mb-6">
@@ -276,10 +399,38 @@ const AdminProfileScreen = () => {
                     {isEditing && (
                         <TouchableOpacity
                             onPress={() => { setIsEditing(false); setFormData(admin); Keyboard.dismiss(); }}
-                            className="mt-8 mb-10 items-center"
+                            className="mt-8 mb-4 items-center"
                         >
-                            <Text className="text-red-500 font-black text-[10px] uppercase tracking-[3px]">Discard Changes</Text>
+                            <Text className="text-gray-400 font-black text-[10px] uppercase tracking-[3px]">Discard Changes</Text>
                         </TouchableOpacity>
+                    )}
+
+                    {!isEditing && admin.type !== 'bigBoss' && (
+                        <View className="mt-10 mb-10 gap-4">
+                            {/* <TouchableOpacity
+                                onPress={handleDismiss}
+                                disabled={loading}
+                                className={`flex-row items-center justify-center p-4 rounded-3xl border ${(admin.accesses?.length || 0) === 0 ? 'border-emerald-100 bg-emerald-50' : 'border-amber-100 bg-amber-50'}`}
+                            >
+                                <MaterialCommunityIcons
+                                    name={(admin.accesses?.length || 0) === 0 ? "account-check-outline" : "account-off"}
+                                    size={18}
+                                    color={(admin.accesses?.length || 0) === 0 ? "#059669" : "#d97706"}
+                                />
+                                <Text className={`ml-2 font-bold text-[10px] uppercase tracking-[2px] ${(admin.accesses?.length || 0) === 0 ? 'text-emerald-700' : 'text-amber-700'}`}>
+                                    {(admin.accesses?.length || 0) === 0 ? 'Reactivate Admin' : 'Eliminate / Deactivate'}
+                                </Text>
+                            </TouchableOpacity> */}
+
+                            <TouchableOpacity
+                                onPress={handleDelete}
+                                disabled={loading}
+                                className="flex-row items-center justify-center p-4 rounded-3xl border border-red-100 bg-red-50"
+                            >
+                                <MaterialCommunityIcons name="trash-can" size={18} color="#dc2626" />
+                                <Text className="ml-2 text-red-600 font-bold text-[10px] uppercase tracking-[2px]">Delete This Admin</Text>
+                            </TouchableOpacity>
+                        </View>
                     )}
 
                 </ScrollView>

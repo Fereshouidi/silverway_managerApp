@@ -16,9 +16,11 @@ import { registerForPushNotificationsAsync } from '@/lib';
 import { AdminAccess } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import * as Notifications from 'expo-notifications';
 import * as Network from 'expo-network';
 import React, { useEffect, useRef, useState } from 'react';
-import { Image, View } from 'react-native';
+import { Button, Image, View, Text } from 'react-native';
+import { Drawer } from 'react-native-drawer-layout';
 
 function RootLayoutContent() {
   const { admin, setAdmin } = useAdmin();
@@ -29,6 +31,7 @@ function RootLayoutContent() {
   const { setOwnerInfo } = useOwner();
   const isRegistered = useRef(false);
   const [isFirstRender, setIsFirstRender] = useState(true);
+  const [open, setOpen] = React.useState(false);
 
   // 1. جلب البيانات الأساسية عند تشغيل التطبيق (المالك + الأدمن)
   const initializeData = async () => {
@@ -104,8 +107,8 @@ function RootLayoutContent() {
               { key: "Open setting page", path: "/(tabs)/setting" },
             ];
 
-            console.log({admin});
-            
+            console.log({ admin });
+
             // العثور على أول مسار يمتلك الأدمن صلاحية الوصول إليه
             const firstAvailable = priorityRoutes.find(route =>
               admin?.accesses?.includes(route.key as AdminAccess)
@@ -138,6 +141,28 @@ function RootLayoutContent() {
     handleNavigationAndPush();
     setIsFirstRender(false);
   }, [admin, isReady, segments]);
+
+  useEffect(() => {
+    // This listener is fired whenever a user taps on or interacts with a notification 
+    // (works when app is foregrounded, backgrounded, or killed)
+    const responseListener = Notifications.addNotificationResponseReceivedListener((response) => {
+      // Navigate to the orders tab
+      router.push('/(tabs)/orders' as any);
+    });
+
+    return () => {
+      responseListener.remove();
+    };
+  }, []);
+
+  // useEffect(() => {
+  //   registerForPushNotificationsAsync().then(token => {
+  //     if (token) {
+  //       // هنا يمكنك إرسال الـ Token إلى الـ Backend الخاص بك وتخزينه
+  //       console.log("Token generated successfully:", token);
+  //     }
+  //   });
+  // }, []);
 
   // شاشة التحميل الأولية (Splash Screen البديلة)
   if (!isReady) {
@@ -172,6 +197,8 @@ function RootLayoutContent() {
   return (
     <>
       <StatusBar style="dark" />
+
+
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
         <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />

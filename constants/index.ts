@@ -23,34 +23,36 @@ const trashWhite = require("@/app/assets/icons/trashWhite.png");
 const analytics = require("@/app/assets/icons/analytics.png");
 const openBoxBlack = require("@/app/assets/icons/open-box-black.png");
 const userWhite = require("@/app/assets/icons/user-white.png");
+const bell = require("@/app/assets/icons/bell.png");
 
 
 
 export const icons = {
-    dashboard,
-    cubes,
-    checklist,
-    settings,
-    realEstateAgent,
-    bookmark,
-    collection,
-    more,
-    check,
-    trash,
-    plus,
-    searchWhite,
-    searchBlack,
-    back,
-    checkWhite,
-    closeWhite,
-    phoneWhite,
-    pen,
-    editText,
-    closeBlack,
-    trashWhite,
-    analytics,
-    openBoxBlack,
-    userWhite
+  dashboard,
+  cubes,
+  checklist,
+  settings,
+  realEstateAgent,
+  bookmark,
+  collection,
+  more,
+  check,
+  trash,
+  plus,
+  searchWhite,
+  searchBlack,
+  back,
+  checkWhite,
+  closeWhite,
+  phoneWhite,
+  pen,
+  editText,
+  closeBlack,
+  trashWhite,
+  analytics,
+  openBoxBlack,
+  userWhite,
+  bell
 }
 
 export const colors = {

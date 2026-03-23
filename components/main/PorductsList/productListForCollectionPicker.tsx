@@ -4,11 +4,12 @@ import { colors } from '@/constants';
 import { ProductType } from '@/types';
 import axios from 'axios';
 import React, { useEffect, useState, useMemo } from 'react';
-import { RefreshControl, ScrollView, Text, View, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { RefreshControl, ScrollView, Text, View, TouchableOpacity, Image, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform, Vibration } from 'react-native';
+import { Search, X, Check } from 'lucide-react-native';
 
 type Props = {
-    products: ProductType[], 
+    products: ProductType[],
     setProducts: (value: ProductType[]) => void
     productsSelected: string[]
     setProductsSelected: (value: string[]) => void
@@ -17,12 +18,13 @@ type Props = {
 }
 
 const ProductListForCollectionPicker = ({
-    products, 
+    products,
     setProducts,
     productsSelected,
     setProductsSelected,
     collectionId
 }: Props) => {
+    const router = useRouter();
 
     const [skipAll, setSkipAll] = useState(0);
     const [totalAll, setTotalAll] = useState(0);
@@ -35,10 +37,26 @@ const ProductListForCollectionPicker = ({
     const [isLoading, setIsLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState<'all' | 'selected'>('selected');
+    const [searchQuery, setSearchQuery] = useState('');
 
     const availableProducts = useMemo(() => {
-        return products.filter(p => !productsSelected.includes(p._id as string));
-    }, [products, productsSelected]);
+        let filtered = products.filter(p => !productsSelected.includes(p._id as string));
+        if (searchQuery) {
+            filtered = filtered.filter(p =>
+                p.name.fr?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                p.name.en?.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        }
+        return filtered;
+    }, [products, productsSelected, searchQuery]);
+
+    const displayedSelectedProducts = useMemo(() => {
+        if (!searchQuery) return fullSelectedProducts;
+        return fullSelectedProducts.filter(p =>
+            p.name.fr?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            p.name.en?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [fullSelectedProducts, searchQuery]);
 
     const toggleSelect = (productId: string) => {
         if (productsSelected.includes(productId)) {
@@ -51,16 +69,20 @@ const ProductListForCollectionPicker = ({
     };
 
     useEffect(() => {
-        const newlySelected = products.filter(p => 
-            productsSelected.includes(p._id as string) && 
-            !fullSelectedProducts.find(f => f._id === p._id)
-        );
-        
-        if (newlySelected.length > 0) {
-            setFullSelectedProducts(prev => [...newlySelected, ...prev]);
-        }
-        setFullSelectedProducts(prev => prev.filter(p => productsSelected.includes(p._id as string)));
-    }, [productsSelected]);
+        // Find all selected products that are available in the current 'products' pool
+        const selectedObjects = products.filter(p => productsSelected.includes(p._id as string));
+
+        setFullSelectedProducts(prev => {
+            // Keep existing ones that are still selected
+            const stillSelected = prev.filter(p => productsSelected.includes(p._id as string));
+
+            // Add new ones from the objects pool that aren't in the list yet
+            const existingIds = new Set(stillSelected.map(p => p._id));
+            const toAdd = selectedObjects.filter(p => !existingIds.has(p._id));
+
+            return [...stillSelected, ...toAdd];
+        });
+    }, [productsSelected, products]);
 
     const fetchAllProducts = async (newSkip: number, append: boolean = false) => {
         if (isLoading) return;
@@ -71,7 +93,7 @@ const ProductListForCollectionPicker = ({
             });
             setProducts(append ? [...products, ...data.products] : data.products);
             setTotalAll(data.productsCount);
-        } catch (err) { console.log(err); } 
+        } catch (err) { console.log(err); }
         finally { setIsLoading(false); setRefreshing(false); }
     };
 
@@ -113,11 +135,33 @@ const ProductListForCollectionPicker = ({
 
     return (
         <View className="flex-1" style={{ backgroundColor: colors.light[100] }}>
-            <View className="px-5 py-4">
-                <View className="flex-row p-1 rounded-2xl" style={{ backgroundColor: colors.light[200] }}>
-                    <TouchableOpacity 
-                        onPress={() => setActiveTab('selected')} 
-                        className="flex-1 py-3 rounded-xl flex-row items-center justify-center gap-x-2" 
+            <View className="px-5 py-4 gap-y-4">
+                {/* Search Bar */}
+                <View
+                    className="flex-row items-center px-4 h-12 rounded-2xl border border-gray-100"
+                    style={{ backgroundColor: colors.light[200] }}
+                >
+                    <Search size={18} color={colors.dark[100]} opacity={0.4} />
+                    <TextInput
+                        placeholder="Search products..."
+                        placeholderTextColor={colors.dark[100] + '40'}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        className="flex-1 ml-3 font-bold text-sm"
+                        style={{ color: colors.dark[100] }}
+                    />
+                    {searchQuery.length > 0 && (
+                        <TouchableOpacity onPress={() => setSearchQuery('')}>
+                            <X size={16} color={colors.dark[100]} />
+                        </TouchableOpacity>
+                    )}
+                </View>
+
+                {/* Tabs */}
+                <View className="flex-row p-1 rounded-2x" style={{ backgroundColor: colors.light[200], borderRadius: 16 }}>
+                    <TouchableOpacity
+                        onPress={() => setActiveTab('selected')}
+                        className="flex-1 py-3 rounded-xl flex-row items-center justify-center gap-x-2"
                         style={{ backgroundColor: activeTab === 'selected' ? colors.dark[100] : 'transparent' }}
                     >
                         <Text className="font-bold text-sm" style={{ color: activeTab === 'selected' ? colors.light[100] : colors.dark[100] }}>
@@ -125,67 +169,66 @@ const ProductListForCollectionPicker = ({
                         </Text>
                         <View className="px-2 py-0.5 rounded-full" style={{ backgroundColor: activeTab === 'selected' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)' }}>
                             <Text className="text-[10px] font-black" style={{ color: activeTab === 'selected' ? colors.light[100] : colors.dark[100] }}>
-                                {totalSelected}
+                                {productsSelected.length}
                             </Text>
                         </View>
                     </TouchableOpacity>
 
-                    <TouchableOpacity 
-                        onPress={() => setActiveTab('all')} 
-                        className="flex-1 py-3 rounded-xl flex-row items-center justify-center gap-x-2" 
+                    <TouchableOpacity
+                        onPress={() => setActiveTab('all')}
+                        className="flex-1 py-3 rounded-xl flex-row items-center justify-center gap-x-2"
                         style={{ backgroundColor: activeTab === 'all' ? colors.dark[100] : 'transparent' }}
                     >
                         <Text className="font-bold text-sm" style={{ color: activeTab === 'all' ? colors.light[100] : colors.dark[100] }}>
                             Available
                         </Text>
-                        <View className="px-2 py-0.5 rounded-full" style={{ backgroundColor: activeTab === 'all' ? colors.light[100] : colors.dark[100] }}>
-                            <Text className="text-[10px] font-black" style={{ color: activeTab === 'all' ? colors.dark[100] : colors.light[100] }}>
-                                {totalAll}
-                            </Text>
-                        </View>
                     </TouchableOpacity>
                 </View>
             </View>
 
-            <ScrollView 
-                showsVerticalScrollIndicator={false} 
+            <ScrollView
+                showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
                 onMomentumScrollEnd={handleScroll}
                 scrollEventThrottle={16}
                 refreshControl={
-                    <RefreshControl 
-                        refreshing={refreshing} 
+                    <RefreshControl
+                        refreshing={refreshing}
                         onRefresh={() => {
                             setSkipAll(0);
                             setSkipSelected(0);
                             activeTab === 'all' ? fetchAllProducts(0) : fetchSelectedProducts(0);
-                        }} 
+                        }}
                     />
                 }
             >
                 <View className='gap-y-3'>
-                    {(activeTab === 'all' ? availableProducts : fullSelectedProducts).map((item) => {
+                    {(activeTab === 'all' ? availableProducts : displayedSelectedProducts).map((item) => {
                         const isSelected = productsSelected.includes(item._id as string);
                         return (
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 key={item._id}
                                 activeOpacity={0.7}
                                 onPress={() => toggleSelect(item._id as string)}
+                                onLongPress={() => {
+                                    Vibration.vibrate(50);
+                                    router.push({ pathname: "/screens/productDetails/[id]", params: { id: item._id as string } });
+                                }}
                                 className="flex-row items-center p-3 rounded-[24px] bg-white border border-gray-50 shadow-sm shadow-black/5"
                             >
-                                <Image source={{ uri: item.thumbNail }} className="w-14 h-14 rounded-2xl bg-gray-100" />
+                                <Image source={{ uri: item.thumbNail || '' }} className="w-14 h-14 rounded-2xl bg-gray-100" />
                                 <View className="flex-1 ml-4">
                                     <Text numberOfLines={1} className="font-bold text-sm text-black uppercase tracking-tight">{item.name.fr}</Text>
                                     <Text className="text-gray-400 text-[10px] font-bold mt-1">{item.price} DZD</Text>
                                 </View>
-                                <View 
+                                <View
                                     className="w-7 h-7 rounded-full items-center justify-center border-2"
-                                    style={{ 
+                                    style={{
                                         backgroundColor: isSelected ? colors.dark[100] : 'transparent',
                                         borderColor: isSelected ? colors.dark[100] : colors.light[300]
                                     }}
                                 >
-                                    {isSelected && <Feather name="check" size={14} color="white" />}
+                                    {isSelected && <Check size={14} color="white" />}
                                 </View>
                             </TouchableOpacity>
                         );

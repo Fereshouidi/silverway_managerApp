@@ -1,10 +1,3 @@
-import { View, ActivityIndicator, Image } from 'react-native';
-import { useAdmin } from '@/contexts/admin';
-import React, { useEffect, useRef, useState } from 'react';
-import { registerForPushNotificationsAsync } from '@/lib';
-import LoadingIcon from '@/components/sub/loading/loadingIcon';
-import * as Notifications from 'expo-notifications';
-import { createNotificationChannel } from '@/service/notification';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-gesture-handler';
@@ -14,16 +7,22 @@ import "../global.css";
 import { backEndUrl } from '@/api';
 import StatusBanner from '@/components/sub/banners/statusBanner';
 import YesNoBanner from '@/components/sub/banners/yesNoBanner';
+import LoadingIcon from '@/components/sub/loading/loadingIcon';
 import LoadingScreen from '@/components/sub/loading/loadingScreen';
 import OfflineScreen from '@/components/sub/offline/OfflineScreen';
+import { useAdmin } from '@/contexts/admin';
 import { useOwner } from '@/contexts/owner';
+import { registerForPushNotificationsAsync } from '@/lib';
 import { AdminAccess } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import * as Notifications from 'expo-notifications';
 import * as Network from 'expo-network';
+import React, { useEffect, useRef, useState } from 'react';
+import { Button, Image, View, Text } from 'react-native';
+import { Drawer } from 'react-native-drawer-layout';
 
-export default function Index() {
-
+function Index() {
   const { admin, setAdmin } = useAdmin();
   const segments = useSegments();
   const router = useRouter();
@@ -32,6 +31,7 @@ export default function Index() {
   const { setOwnerInfo } = useOwner();
   const isRegistered = useRef(false);
   const [isFirstRender, setIsFirstRender] = useState(true);
+  const [open, setOpen] = React.useState(false);
 
   // 1. جلب البيانات الأساسية عند تشغيل التطبيق (المالك + الأدمن)
   const initializeData = async () => {
@@ -107,13 +107,12 @@ export default function Index() {
               { key: "Open setting page", path: "/(tabs)/setting" },
             ];
 
+            console.log({ admin });
+
             // العثور على أول مسار يمتلك الأدمن صلاحية الوصول إليه
             const firstAvailable = priorityRoutes.find(route =>
               admin?.accesses?.includes(route.key as AdminAccess)
             );
-
-            console.log({admin});
-            
 
             // التوجيه للمسار المناسب
             if (firstAvailable) {
@@ -143,17 +142,74 @@ export default function Index() {
     setIsFirstRender(false);
   }, [admin, isReady, segments]);
 
-  // واجهة اللودينج (Dark Mode كما طلبت)
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
-      <Image
-        source={require("@/app/assets/images/logo-black.jpg")}
-        style={{ width: 200, height: 200, marginBottom: 20 }}
-        resizeMode="contain"
-      />
-      <View style={{ width: 40, height: 40 }}>
-        {/* <LoadingIcon /> */}
+  useEffect(() => {
+    // This listener is fired whenever a user taps on or interacts with a notification 
+    // (works when app is foregrounded, backgrounded, or killed)
+    const responseListener = Notifications.addNotificationResponseReceivedListener((response) => {
+      // Navigate to the orders tab
+      router.push('/(tabs)/orders' as any);
+    });
+
+    return () => {
+      responseListener.remove();
+    };
+  }, []);
+
+  // useEffect(() => {
+  //   registerForPushNotificationsAsync().then(token => {
+  //     if (token) {
+  //       // هنا يمكنك إرسال الـ Token إلى الـ Backend الخاص بك وتخزينه
+  //       console.log("Token generated successfully:", token);
+  //     }
+  //   });
+  // }, []);
+
+  // شاشة التحميل الأولية (Splash Screen البديلة)
+  if (!isReady) {
+    return (
+      <View className='w-full h-full flex justify-center items-center bg-black'>
+        <Image
+          source={require("@/app/assets/images/logo-black.jpg")}
+          className='w-[200px] h-[200px]'
+        />
+        <View className='w-10 h-10'>
+          <LoadingIcon />
+        </View>
       </View>
-    </View>
+    );
+  }
+
+  if (isOffline) {
+    return <OfflineScreen onRetry={initializeData} />;
+  }
+
+  // useEffect(() => {
+  //   // logout 
+  //   const logout = async () => {
+  //     await AsyncStorage.removeItem("adminToken");
+  //     setAdmin(null);
+  //     router.replace('/(auth)/signin');
+  //   }
+  //   logout();
+
+  // }, [])
+
+  return (
+    <>
+      <StatusBar style="dark" />
+
+
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="addProduct" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+      </Stack>
+      <LoadingScreen />
+      <YesNoBanner />
+      <StatusBanner />
+    </>
   );
 }
+
+export default Index;

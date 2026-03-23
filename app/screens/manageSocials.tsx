@@ -2,6 +2,7 @@ import Header from '@/components/main/header';
 import { colors } from '@/constants';
 import { useOwner } from '@/contexts/owner';
 import { useStatusBanner } from '@/contexts/StatusBanner';
+import { isValidEmail, isValidPhone } from '@/lib';
 import { OwnerInfoType } from '@/types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -72,6 +73,18 @@ const ManageSocials = () => {
 
     const handleSave = async () => {
         if (!ownerInfo) return;
+
+        // Validation
+        if (socials.Email && !isValidEmail(socials.Email)) {
+            setStatusBanner(true, "Please provide a valid business email.", "warning");
+            return;
+        }
+
+        if (socials.Phone && !isValidPhone(socials.Phone)) {
+            setStatusBanner(true, "Official phone must be exactly 8 digits.", "warning");
+            return;
+        }
+
         setIsLoading(true);
         try {
             const updatedSocialMedia = socialConfig.map(config => ({
@@ -100,6 +113,9 @@ const ManageSocials = () => {
             setIsLoading(false);
         }
     };
+
+    const isInvalidEmail = socials.Email && !isValidEmail(socials.Email);
+    const isInvalidPhone = socials.Phone && !isValidPhone(socials.Phone);
 
     return (
         <SafeAreaView className="flex-1" style={{ backgroundColor: colors.light[100] }}>
@@ -149,24 +165,32 @@ const ManageSocials = () => {
                 <View className="gap-y-6">
                     {/* Official Phone */}
                     <View className="gap-y-2">
-                        <Text className="ml-1 font-bold text-[10px] uppercase opacity-40" style={{ color: colors.dark[100] }}>Official Phone</Text>
-                        <View className="flex-row items-center px-4 h-16 rounded-[20px]" style={{ backgroundColor: colors.light[200] }}>
-                            <MaterialCommunityIcons name="phone-outline" size={20} color={colors.dark[100]} style={{ opacity: 0.5 }} />
+                        <Text className={`ml-1 font-bold text-[10px] uppercase ${isInvalidPhone ? 'text-red-500' : 'opacity-40'}`} style={!isInvalidPhone ? { color: colors.dark[100] } : {}}>
+                            Official Phone {isInvalidPhone && "(Must be 8 digits)"}
+                        </Text>
+                        <View className={`flex-row items-center px-4 h-16 rounded-[20px] border ${isInvalidPhone ? 'border-red-500' : 'border-transparent'}`} style={{ backgroundColor: colors.light[200] }}>
+                            <MaterialCommunityIcons name="phone-outline" size={20} color={isInvalidPhone ? "#ef4444" : colors.dark[100]} style={{ opacity: isInvalidPhone ? 1 : 0.5 }} />
                             <TextInput
                                 className="flex-1 ml-3 font-semibold text-sm h-full"
                                 style={{ color: colors.dark[100] }}
                                 keyboardType="phone-pad"
                                 value={socials.Phone}
-                                onChangeText={(text) => setSocials({ ...socials, Phone: text })}
+                                maxLength={8}
+                                onChangeText={(text) => {
+                                    const clean = text.replace(/\D/g, '').slice(0, 8);
+                                    setSocials({ ...socials, Phone: clean });
+                                }}
                             />
                         </View>
                     </View>
 
                     {/* Business Email */}
                     <View className="gap-y-2">
-                        <Text className="ml-1 font-bold text-[10px] uppercase opacity-40" style={{ color: colors.dark[100] }}>Business Email</Text>
-                        <View className="flex-row items-center px-4 h-16 rounded-[20px]" style={{ backgroundColor: colors.light[200] }}>
-                            <MaterialCommunityIcons name="email-outline" size={20} color={colors.dark[100]} style={{ opacity: 0.5 }} />
+                        <Text className={`ml-1 font-bold text-[10px] uppercase ${isInvalidEmail ? 'text-red-500' : 'opacity-40'}`} style={!isInvalidEmail ? { color: colors.dark[100] } : {}}>
+                            Business Email {isInvalidEmail && "(Invalid format)"}
+                        </Text>
+                        <View className={`flex-row items-center px-4 h-16 rounded-[20px] border ${isInvalidEmail ? 'border-red-500' : 'border-transparent'}`} style={{ backgroundColor: colors.light[200] }}>
+                            <MaterialCommunityIcons name="email-outline" size={20} color={isInvalidEmail ? "#ef4444" : colors.dark[100]} style={{ opacity: isInvalidEmail ? 1 : 0.5 }} />
                             <TextInput
                                 className="flex-1 ml-3 font-semibold text-sm h-full"
                                 style={{ color: colors.dark[100] }}
@@ -178,6 +202,7 @@ const ManageSocials = () => {
                             />
                         </View>
                     </View>
+
 
                     {/* Mail App Password */}
                     <View className="gap-y-2">

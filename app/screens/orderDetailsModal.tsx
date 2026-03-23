@@ -4,8 +4,9 @@ import { useAdmin } from '@/contexts/admin';
 import { useStatusBanner } from '@/contexts/StatusBanner';
 import { handleCall } from '@/lib';
 import { DeliveryWorkerType, OrderType } from '@/types';
-import { FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { FontAwesome5, Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import axios from 'axios';
+import { useRouter } from 'expo-router';
 import moment from 'moment';
 import React, { useState } from 'react';
 import {
@@ -36,6 +37,7 @@ const OrderDetailsModal = ({ isVisible, onClose, order, deliveryWorker, onUpdate
     const [statusMessage, setStatusMessage] = useState<{ text: string, type: 'success' | 'error' | 'warning' } | null>(null);
     const { admin } = useAdmin();
     const { setStatusBanner } = useStatusBanner();
+    const router = useRouter();
 
     if (!order) return null;
 
@@ -96,6 +98,9 @@ const OrderDetailsModal = ({ isVisible, onClose, order, deliveryWorker, onUpdate
 
     const isOrderFinalized = order.status === 'delivered' || order.status === 'failed';
 
+    //@ts-ignore
+    const clientInfo = order.client || order.purchases?.[0]?.client;
+
     return (
         <Modal
             animationType="slide"
@@ -129,12 +134,6 @@ const OrderDetailsModal = ({ isVisible, onClose, order, deliveryWorker, onUpdate
                                     #{order.orderNumber}
                                 </Text>
                             </View>
-                            <TouchableOpacity
-                                onPress={onClose}
-                                className="bg-gray-100 w-10 h-10 rounded-full items-center justify-center"
-                            >
-                                <Ionicons name="close" size={22} color={colors.dark[100]} />
-                            </TouchableOpacity>
                         </View>
 
                         <View className="w-full items-center">
@@ -180,16 +179,34 @@ const OrderDetailsModal = ({ isVisible, onClose, order, deliveryWorker, onUpdate
                         <View className="mb-6">
                             <Text className="text-[11px] font-black mb-4 uppercase text-gray-400 tracking-widest ml-1">Order Items</Text>
                             {order.purchases?.map((item, index) => (
-                                <View key={item._id || index} className="bg-white border border-gray-100 rounded-[30px] p-4 mb-3 flex-row items-center shadow-sm">
-                                    <Image
-                                        //@ts-ignore
-                                        source={{ uri: item.product?.thumbNail }}
-                                        className="w-16 h-16 rounded-[20px] bg-gray-50"
-                                    />
+                                <TouchableOpacity
+                                    key={item._id || index}
+                                    activeOpacity={0.7}
+                                    onPress={() => {
+                                        const pId = typeof item.product === 'object' ? (item.product as any)?._id : (item.product || (item as any).productId);
+                                        if (!pId) return;
+
+                                        onClose();
+                                        router.push({
+                                            pathname: '/screens/productDetails/[id]',
+                                            params: { id: pId }
+                                        });
+                                    }}
+                                    className="bg-white border border-gray-100 rounded-[30px] p-4 mb-3 flex-row items-center shadow-sm"
+                                >
+                                    {typeof item.product === 'object' && (item.product as any)?.thumbNail ? (
+                                        <Image
+                                            source={{ uri: (item.product as any)?.thumbNail }}
+                                            className="w-16 h-16 rounded-[20px] bg-gray-50"
+                                        />
+                                    ) : (
+                                        <View className="w-16 h-16 rounded-[20px] bg-red-50 items-center justify-center">
+                                            <MaterialCommunityIcons name="package-variant-remove" size={24} color="#ef4444" />
+                                        </View>
+                                    )}
                                     <View className="flex-1 ml-4 justify-between h-16 py-1">
-                                        <Text className="font-black text-[13px] text-dark-100" numberOfLines={1}>{
-                                            //@ts-ignore
-                                            getLangText(item.product?.name)}
+                                        <Text className={`font-black text-[13px] ${!item.product ? 'text-red-500 italic' : 'text-dark-100'}`} numberOfLines={1}>{
+                                            item.product ? getLangText((item.product as any)?.name) : "Deleted Product"}
                                         </Text>
                                         <View className="flex-row items-end justify-between">
                                             <View>
@@ -202,13 +219,16 @@ const OrderDetailsModal = ({ isVisible, onClose, order, deliveryWorker, onUpdate
                                                     item.specification?.size} / {item.specification?.color}
                                                 </Text>
                                             </View>
-                                            <Text className="font-black text-sm" style={{ color: colors.dark[100] }}>{
-                                                //@ts-ignore
-                                                ((item.specification?.price || 0) * item.quantity).toFixed(2)} DT
-                                            </Text>
+                                            <View className='flex-row items-center'>
+                                                <Text className="font-black text-sm mr-2" style={{ color: colors.dark[100] }}>{
+                                                    //@ts-ignore
+                                                    ((item.specification?.price || 0) * item.quantity).toFixed(2)} DT
+                                                </Text>
+                                                <Feather name="chevron-right" size={14} color="#D1D5DB" />
+                                            </View>
                                         </View>
                                     </View>
-                                </View>
+                                </TouchableOpacity>
                             ))}
                         </View>
 
@@ -218,13 +238,27 @@ const OrderDetailsModal = ({ isVisible, onClose, order, deliveryWorker, onUpdate
                                 <FontAwesome5 name="map-marker-alt" size={14} color={colors.dark[100]} />
                                 <Text className="ml-3 font-black text-[11px] uppercase text-dark-100 tracking-widest">Delivery Info</Text>
                             </View>
-                            <View className="px-1 mb-4">
-                                <Text className="text-dark-100 font-black text-lg mb-1">{
-                                    //@ts-ignore
-                                    order.purchases[0]?.client?.fullName || "Client"}
-                                </Text>
-                                <Text className="text-gray-500 text-xs leading-5">{getLangText(order.address)}</Text>
-                            </View>
+                            <TouchableOpacity
+                                activeOpacity={0.7}
+                                onPress={() => {
+                                    onClose();
+                                    router.push({
+                                        pathname: '/screens/clientDetails/[id]',
+                                        params: { id: typeof clientInfo === 'object' ? (clientInfo as any)?._id : clientInfo }
+                                    });
+                                }}
+                                className="px-1 mb-4"
+                            >
+                                <View className='flex-row items-center justify-between'>
+                                    <View>
+                                        <Text className="text-dark-100 font-black text-lg mb-1">
+                                            {typeof clientInfo === 'object' ? (clientInfo as any)?.fullName : "unknown"}
+                                        </Text>
+                                        <Text className="text-gray-500 text-xs leading-5">{getLangText(order.address)}</Text>
+                                    </View>
+                                    <Feather name="chevron-right" size={18} color="#D1D5DB" />
+                                </View>
+                            </TouchableOpacity>
 
                             {/* Client Note Section */}
                             {order.clientNote && (
@@ -239,8 +273,7 @@ const OrderDetailsModal = ({ isVisible, onClose, order, deliveryWorker, onUpdate
 
                             <View className="gap-y-3">
                                 <TouchableOpacity
-                                    //@ts-ignore
-                                    onPress={() => handleCall(order.purchases[0]?.client?.phone?.toString() || "")}
+                                    onPress={() => handleCall(typeof clientInfo === 'object' ? (clientInfo as any)?.phone?.toString() || "" : "")}
                                     className="bg-white border border-green-100 h-20 rounded-2xl flex-row items-center px-5 shadow-sm"
                                 >
                                     <View className="bg-green-500 w-10 h-10 rounded-xl items-center justify-center">
@@ -248,9 +281,8 @@ const OrderDetailsModal = ({ isVisible, onClose, order, deliveryWorker, onUpdate
                                     </View>
                                     <View className="ml-4 flex-1">
                                         <Text className="text-[9px] text-green-600 font-black uppercase">Client Phone</Text>
-                                        <Text className="text-dark-100 font-black text-sm">{
-                                            //@ts-ignore
-                                            order.purchases[0]?.client?.phone}
+                                        <Text className="text-dark-100 font-black text-sm">
+                                            {typeof clientInfo === 'object' ? (clientInfo as any)?.phone || "N/A" : "N/A"}
                                         </Text>
                                     </View>
                                     <MaterialCommunityIcons name="phone-outgoing" size={18} color="#16a34a" />
@@ -281,7 +313,9 @@ const OrderDetailsModal = ({ isVisible, onClose, order, deliveryWorker, onUpdate
                             </View>
                             <View className="h-[1px] bg-gray-50 my-2" />
                             <View className="flex-row justify-between items-center mt-3">
-                                <Text className="text-lg font-black" style={{ color: colors.dark[100] }}>Grand Total</Text>
+                                <Text className="text-lg font-black" style={{ color: colors.dark[100] }}>
+                                    {order.status === 'failed' ? 'Transaction Loss' : 'Grand Total'}
+                                </Text>
                                 <Text
                                     className="text-2xl font-black"
                                     style={{
@@ -302,8 +336,8 @@ const OrderDetailsModal = ({ isVisible, onClose, order, deliveryWorker, onUpdate
                     {statusMessage && (
                         <View
                             className={`mx-6 mb-4 p-4 rounded-2xl flex-row items-center ${statusMessage.type === 'success' ? 'bg-green-50 border border-green-100' :
-                                    statusMessage.type === 'warning' ? 'bg-orange-50 border border-orange-100' :
-                                        'bg-red-50 border border-red-100'
+                                statusMessage.type === 'warning' ? 'bg-orange-50 border border-orange-100' :
+                                    'bg-red-50 border border-red-100'
                                 }`}
                         >
                             <Ionicons
@@ -312,8 +346,8 @@ const OrderDetailsModal = ({ isVisible, onClose, order, deliveryWorker, onUpdate
                                 color={statusMessage.type === 'success' ? "#16a34a" : statusMessage.type === 'warning' ? "#f97316" : "#ef4444"}
                             />
                             <Text className={`ml-2 font-bold text-[13px] ${statusMessage.type === 'success' ? 'text-green-700' :
-                                    statusMessage.type === 'warning' ? 'text-orange-700' :
-                                        'text-red-700'
+                                statusMessage.type === 'warning' ? 'text-orange-700' :
+                                    'text-red-700'
                                 }`}>
                                 {statusMessage.text}
                             </Text>
@@ -361,8 +395,8 @@ const styles = StyleSheet.create({
     },
     modalContainer: {
         backgroundColor: colors.light[100],
-        borderTopLeftRadius: 50,
-        borderTopRightRadius: 50,
+        borderTopLeftRadius: 22,
+        borderTopRightRadius: 22,
         height: SCREEN_HEIGHT * 0.93,
         paddingBottom: Platform.OS === 'ios' ? 20 : 0,
     }

@@ -1,6 +1,7 @@
 import { backEndUrl } from '@/api';
 import { colors } from '@/constants';
 import { useStatusBanner } from '@/contexts/StatusBanner';
+import { isValidEmail, isValidPhone } from '@/lib';
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import {
@@ -14,6 +15,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface DeliveryWorkerProps {
   workerData?: any;
@@ -21,6 +23,7 @@ interface DeliveryWorkerProps {
 }
 
 const DeliveryWorker = ({ workerData: initialData, onRefresh }: DeliveryWorkerProps) => {
+  const insets = useSafeAreaInsets();
   const [data, setData] = useState(initialData);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(!initialData);
@@ -74,6 +77,17 @@ const DeliveryWorker = ({ workerData: initialData, onRefresh }: DeliveryWorkerPr
   const handleUpdate = async () => {
     if (!data?._id) return;
 
+    // Validation
+    if (formData.email && !isValidEmail(formData.email)) {
+      setStatusBanner(true, "Please provide a valid email address.", "warning");
+      return;
+    }
+
+    if (formData.phone && !isValidPhone(formData.phone)) {
+      setStatusBanner(true, "Phone number must be exactly 8 digits.", "warning");
+      return;
+    }
+
     try {
       setUpdating(true);
       await axios.put(`${backEndUrl}/updateDeliveryWorker/${data._id}`, formData);
@@ -102,7 +116,7 @@ const DeliveryWorker = ({ workerData: initialData, onRefresh }: DeliveryWorkerPr
       <ScrollView
         className="flex-1 bg-white"
         style={{ minHeight: '100%' }}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 0 + insets.bottom }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -167,14 +181,20 @@ const DeliveryWorker = ({ workerData: initialData, onRefresh }: DeliveryWorkerPr
                 label="PHONE NUMBER"
                 value={isEditing ? formData.phone : data?.phone}
                 isEditing={isEditing}
-                onChange={(t: string) => setFormData({ ...formData, phone: t })}
+                onChange={(t: string) => {
+                  const clean = t.replace(/\D/g, '').slice(0, 8);
+                  setFormData({ ...formData, phone: clean });
+                }}
                 keyboardType="phone-pad"
+                maxLength={8}
+                isInvalid={formData.phone && !isValidPhone(formData.phone)}
               />
               <EditableRow
                 label="EMAIL ADDRESS"
                 value={isEditing ? formData.email : data?.email}
                 isEditing={isEditing}
                 onChange={(t: string) => setFormData({ ...formData, email: t })}
+                isInvalid={formData.email && !isValidEmail(formData.email)}
               />
               <EditableRow
                 label="ADDRESS"
@@ -201,7 +221,7 @@ const DeliveryWorker = ({ workerData: initialData, onRefresh }: DeliveryWorkerPr
           ) : (
             <View className="mt-10 items-center opacity-20">
               <Text className="text-[9px] font-bold tracking-[2px]" style={{ color: colors.dark[100] }}>
-                SECURED SYSTEM • VERSION 1.0.2
+                SILVERWAY • DELIVERY WORKER
               </Text>
             </View>
           )}
@@ -211,18 +231,19 @@ const DeliveryWorker = ({ workerData: initialData, onRefresh }: DeliveryWorkerPr
   );
 };
 
-const EditableRow = ({ label, value, isEditing, onChange, keyboardType = "default", isLast }: any) => (
+const EditableRow = ({ label, value, isEditing, onChange, keyboardType = "default", isLast, maxLength, isInvalid }: any) => (
   <View className={`py-4 ${!isLast ? 'border-b border-black/5' : ''}`}>
-    <Text className="text-[9px] font-bold opacity-30 mb-1" style={{ color: colors.dark[100] }}>
-      {label}
+    <Text className={`text-[9px] font-bold opacity-30 mb-1 ${isInvalid ? 'text-red-500 opacity-100' : ''}`} style={!isInvalid ? { color: colors.dark[100] } : {}}>
+      {label} {isInvalid && "(INVALID)"}
     </Text>
     {isEditing ? (
       <TextInput
         value={String(value || '')}
         onChangeText={onChange}
         keyboardType={keyboardType}
-        className="font-bold text-sm p-0 m-0"
-        style={{ color: colors.dark[100] }}
+        maxLength={maxLength}
+        className={`font-bold text-sm p-0 m-0 ${isInvalid ? 'text-red-500' : ''}`}
+        style={!isInvalid ? { color: colors.dark[100] } : {}}
         placeholder={`Enter ${label.toLowerCase()}`}
       />
     ) : (

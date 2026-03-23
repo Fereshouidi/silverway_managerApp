@@ -14,6 +14,10 @@ import { StatusBannerProvider } from '@/contexts/StatusBanner';
 import { BannerProvider } from '@/contexts/yesNoBanner';
 import { createNotificationChannel } from '@/service/notification';
 import RootLayoutContent from './rootLayoutContent';
+import { SidebarProvider } from '@/contexts/sidebar';
+import Sidebar from '@/components/main/sidebar';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 
 export const unstable_settings = {
@@ -23,29 +27,35 @@ export const unstable_settings = {
 
 export default function RootLayout() {
 
-  // useEffect(() => {
-  //   const handleNotifications = async () => {
-  //     await createNotificationChannel()
-  //   }
-  //   handleNotifications()
-  // }, [])
+  useEffect(() => {
+    const handleNotifications = async () => {
+      try {
+        await createNotificationChannel();
+      } catch (e) {
+        console.error("Failed to create notification channel:", e);
+      }
+    }
+    handleNotifications();
+  }, []);
 
   return (
-    // <SocketProvider>
-    <StatusBannerProvider>
-      <LoadingScreenProvider>
-        <ProductSectionProvider>
-          <OwnerProvider>
-            <AdminProvider>
-              <BannerProvider>
-                <RootLayoutContent />
-                <StatusBar style="dark" backgroundColor={colors.light[100]} />
-              </BannerProvider>
-            </AdminProvider>
-          </OwnerProvider>
-        </ProductSectionProvider>
-      </LoadingScreenProvider>
-    </StatusBannerProvider>
-    // </SocketProvider>
+    <SafeAreaProvider>
+      <StatusBannerProvider>
+        <LoadingScreenProvider>
+          <ProductSectionProvider>
+            <OwnerProvider>
+              <AdminProvider>
+                <BannerProvider>
+                  <SidebarProvider>
+                    <RootLayoutContent />
+                    <StatusBar style="dark" backgroundColor={colors.light[100]} />
+                  </SidebarProvider>
+                </BannerProvider>
+              </AdminProvider>
+            </OwnerProvider>
+          </ProductSectionProvider>
+        </LoadingScreenProvider>
+      </StatusBannerProvider>
+    </SafeAreaProvider>
   );
 }
