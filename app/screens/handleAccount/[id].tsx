@@ -108,14 +108,14 @@ const HandleAccount = () => {
                         <View className="gap-y-6">
                             <View>
                                 <Text className={`text-[10px] font-black uppercase mb-2 ml-1 ${isInvalidEmail ? 'text-red-500' : 'text-black/30'}`}>Email Address {isInvalidEmail && "(Invalid)"}</Text>
-                                <View className={`flex-row items-center bg-gray-50 rounded-2xl px-4 border ${isInvalidEmail ? 'border-red-500' : 'border-gray-100'}`}>
+                                <View className={`flex-row items-center bg-gray-50 rounded-xl px-4 border ${isInvalidEmail ? 'border-red-500' : 'border-gray-100'}`}>
                                     <MaterialCommunityIcons name="email-outline" size={20} color={isInvalidEmail ? "#ef4444" : "#999"} />
                                     <TextInput className="flex-1 h-16 ml-3 font-bold text-black" placeholder="email@company.com" placeholderTextColor="#A3A3A3" keyboardType="email-address" autoCapitalize="none" value={formData.email} onChangeText={(t) => setFormData({ ...formData, email: t })} />
                                 </View>
                             </View>
                             <View>
                                 <Text className={`text-[10px] font-black uppercase mb-2 ml-1 ${isInvalidPhone ? 'text-red-500' : 'text-black/30'}`}>Phone Number {isInvalidPhone && "(8 digits)"}</Text>
-                                <View className={`flex-row items-center bg-gray-50 rounded-2xl px-4 border ${isInvalidPhone ? 'border-red-500' : 'border-gray-100'}`}>
+                                <View className={`flex-row items-center bg-gray-50 rounded-xl px-4 border ${isInvalidPhone ? 'border-red-500' : 'border-gray-100'}`}>
                                     <MaterialCommunityIcons name="phone-outline" size={20} color={isInvalidPhone ? "#ef4444" : "#999"} />
                                     <TextInput
                                         className="flex-1 h-16 ml-3 font-bold text-black"
@@ -131,14 +131,14 @@ const HandleAccount = () => {
                                     />
                                 </View>
                             </View>
-                            <TouchableOpacity onPress={handleUpdateAndSendOtp} disabled={loading} className="bg-black h-16 rounded-2xl items-center justify-center mt-6 shadow-xl">
+                            <TouchableOpacity onPress={handleUpdateAndSendOtp} disabled={loading} className="bg-black h-16 rounded-xl items-center justify-center mt-6 shadow-xl">
                                 {loading ? <ActivityIndicator color="white" /> : <Text className="text-white font-black uppercase">Send Code</Text>}
                             </TouchableOpacity>
                         </View>
                     ) : (
                         <View className="gap-y-6">
-                            <TextInput className="bg-gray-50 h-20 rounded-3xl border border-gray-100 text-center text-3xl font-black tracking-[10px] text-black" placeholder="000000" placeholderTextColor="#A3A3A3" keyboardType="number-pad" maxLength={6} autoFocus value={formData.otp} onChangeText={(t) => setFormData({ ...formData, otp: t })} />
-                            <TouchableOpacity onPress={handleVerifyOtp} disabled={loading} className="bg-black h-16 rounded-2xl items-center justify-center shadow-xl">
+                            <TextInput className="bg-gray-50 h-20 rounded-xl border border-gray-100 text-center text-3xl font-black tracking-[10px] text-black" placeholder="000000" placeholderTextColor="#A3A3A3" keyboardType="number-pad" maxLength={6} autoFocus value={formData.otp} onChangeText={(t) => setFormData({ ...formData, otp: t })} />
+                            <TouchableOpacity onPress={handleVerifyOtp} disabled={loading} className="bg-black h-16 rounded-xl items-center justify-center shadow-xl">
                                 {loading ? <ActivityIndicator color="white" /> : <Text className="text-white font-black uppercase">Verify & Access</Text>}
                             </TouchableOpacity>
                             <TouchableOpacity onPress={() => setStep('info')} className="items-center">

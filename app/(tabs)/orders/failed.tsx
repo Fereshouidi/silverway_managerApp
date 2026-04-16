@@ -80,7 +80,7 @@ const Failed = ({
     const renderSkeleton = () => (
         <View className="p-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <View key={i} className="w-full h-44 bg-gray-50 rounded-[35px] mb-6 animate-pulse border border-gray-100" />
+                <View key={i} className="w-full h-44 bg-gray-50 rounded-xl mb-6 animate-pulse border border-gray-100" />
             ))}
         </View>
     );
@@ -119,7 +119,7 @@ const Failed = ({
                     ListFooterComponent={() => (
                         <View style={{ height: 100, justifyContent: 'center', alignItems: 'center' }}>
                             {loadingMore ? (
-                                <View className="bg-white px-5 py-3 rounded-2xl shadow-sm border border-gray-50 flex-row items-center">
+                                <View className="bg-white px-5 py-3 rounded-xl shadow-sm border border-gray-50 flex-row items-center">
                                     <ActivityIndicator size="small" color={colors.dark[100]} />
                                     <Text className="ml-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">
                                         Loading more failed...

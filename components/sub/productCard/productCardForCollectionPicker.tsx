@@ -23,7 +23,7 @@ type productCardType = {
 const ProductCardForCollectionPicker = ({
     product,
     className,
-    productsSelected, 
+    productsSelected,
     setProductsSelected,
     AllCount,
     setAllCount,
@@ -49,11 +49,11 @@ const ProductCardForCollectionPicker = ({
     };
 
     return (
-        <TouchableOpacity 
+        <TouchableOpacity
             activeOpacity={0.7}
             onLongPress={() => router.push({ pathname: '/screens/productDetails/[id]', params: { id: product._id ?? "" } })}
             onPress={handleToggleSelection}
-            className={`rounded-3xl border-2 overflow-hidden ${className}`}
+            className={`rounded-xl border-2 overflow-hidden ${className}`}
             style={{
                 backgroundColor: colors.light[100],
                 borderColor: isSelected ? colors.dark[100] : 'transparent',
@@ -74,10 +74,10 @@ const ProductCardForCollectionPicker = ({
 
                 {/* Selection Indicator (Checkmark) */}
                 <View className="absolute top-2 right-2">
-                    <MaterialCommunityIcons 
-                        name={isSelected ? "checkbox-marked-circle" : "checkbox-blank-circle-outline"} 
-                        size={24} 
-                        color={isSelected ? colors.dark[100] : "rgba(0,0,0,0.1)"} 
+                    <MaterialCommunityIcons
+                        name={isSelected ? "checkbox-marked-circle" : "checkbox-blank-circle-outline"}
+                        size={24}
+                        color={isSelected ? colors.dark[100] : "rgba(0,0,0,0.1)"}
                     />
                 </View>
 
@@ -91,8 +91,8 @@ const ProductCardForCollectionPicker = ({
 
             {/* Info Section */}
             <View className="p-3 items-center">
-                <Text 
-                    className="text-[12px] font-semibold text-center mb-1" 
+                <Text
+                    className="text-[12px] font-semibold text-center mb-1"
                     style={{ color: colors.dark[200] }}
                     numberOfLines={1}
                 >
@@ -111,9 +111,9 @@ const ProductCardForCollectionPicker = ({
 
             {/* Selected Overlay Label */}
             {isSelected && (
-                <View 
-                    className="absolute inset-x-0 bottom-0 h-1 items-center justify-center" 
-                    style={{ backgroundColor: colors.dark[100] }} 
+                <View
+                    className="absolute inset-x-0 bottom-0 h-1 items-center justify-center"
+                    style={{ backgroundColor: colors.dark[100] }}
                 />
             )}
         </TouchableOpacity>

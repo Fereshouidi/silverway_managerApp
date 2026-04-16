@@ -107,8 +107,6 @@ function RootLayoutContent() {
               { key: "Open setting page", path: "/(tabs)/setting" },
             ];
 
-            console.log({ admin });
-
             // العثور على أول مسار يمتلك الأدمن صلاحية الوصول إليه
             const firstAvailable = priorityRoutes.find(route =>
               admin?.accesses?.includes(route.key as AdminAccess)

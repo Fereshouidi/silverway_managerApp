@@ -59,12 +59,13 @@ const Setting = () => {
                     contact: {
                         email: info.contact?.email || '',
                         mailPassword: info.contact?.mailPassword || '',
-                        phone: info.contact?.phone?.toString() || ''
+                        phone: info.contact?.phone ? String(info.contact.phone) : ''
                     },
                     logo: info.logo || { dark: '', light: '' },
                     homeCollections: info.homeCollections || [],
                     topCollections: info.topCollections || [],
                     collectionsInSideBar: info.collectionsInSideBar || [],
+                    freeShippingThreshold: info.freeShippingThreshold || 0,
                     aiPrompt: info.aiPrompt || ''
                 });
             }
@@ -118,6 +119,7 @@ const Setting = () => {
             // --- Owner Data ---
             ownerFormData.append('name', ownerInfo.name || "");
             ownerFormData.append('shippingCost', String(ownerInfo.shippingCost || 0));
+            ownerFormData.append('freeShippingThreshold', String(ownerInfo.freeShippingThreshold || 0));
 
             // إرسال كائن Contact بشكل صحيح
             ownerFormData.append('contact', JSON.stringify({
@@ -208,7 +210,7 @@ const Setting = () => {
                                 setLogo={(v) => setOwnerInfo({ ...ownerInfo, logo: v })}
                             />
 
-                            <View className="w-full px-6 py-8 rounded-[32px] mt-6 shadow-sm" style={{ backgroundColor: colors.light[200] }}>
+                            <View className="w-full px-6 py-8 rounded-xl mt-6 shadow-sm" style={{ backgroundColor: colors.light[200] }}>
                                 {/* Header Section */}
                                 <View className="flex-row items-center mb-6">
                                     {/* <MaterialCommunityIcons name="store-cog-outline" size={24} color={colors.dark[100]} /> */}
@@ -219,10 +221,10 @@ const Setting = () => {
                                     {/* Store Name Input */}
                                     <View>
                                         <Text className="text-[10px] opacity-40 font-bold ml-1 mb-2 uppercase tracking-widest">Store Name</Text>
-                                        <View className="flex-row items-center rounded-2xl px-4" style={{ backgroundColor: colors.light[100] }}>
+                                        <View className="flex-row items-center rounded-xl px-4" style={{ backgroundColor: colors.light[100] }}>
                                             <MaterialCommunityIcons name="storefront-outline" size={20} color={colors.dark[100]} style={{ opacity: 0.5 }} />
                                             <TextInput
-                                                value={ownerInfo.name}
+                                                value={ownerInfo.name || ""}
                                                 onChangeText={(v) => setOwnerInfo({ ...ownerInfo, name: v })}
                                                 className="flex-1 p-4 text-sm font-semibold"
                                                 style={{ color: colors.dark[100] }}
@@ -235,10 +237,10 @@ const Setting = () => {
                                     {/* Shipping Cost Input */}
                                     <View>
                                         <Text className="text-[10px] opacity-40 font-bold ml-1 mb-2 uppercase tracking-widest">Default Shipping Cost</Text>
-                                        <View className="flex-row items-center rounded-2xl px-4" style={{ backgroundColor: colors.light[100] }}>
+                                        <View className="flex-row items-center rounded-xl px-4" style={{ backgroundColor: colors.light[100] }}>
                                             <MaterialCommunityIcons name="truck-delivery-outline" size={20} color={colors.dark[100]} style={{ opacity: 0.5 }} />
                                             <TextInput
-                                                value={ownerInfo.shippingCost.toString()}
+                                                value={String(ownerInfo.shippingCost ?? 0)}
                                                 onChangeText={(v) => setOwnerInfo({ ...ownerInfo, shippingCost: Number(v) || 0 })}
                                                 keyboardType="numeric"
                                                 className="flex-1 p-4 text-sm font-semibold"
@@ -249,13 +251,33 @@ const Setting = () => {
                                             <Text className="font-bold text-xs opacity-40" style={{ color: colors.dark[100] }}>D.T</Text>
                                         </View>
                                     </View>
+
+                                    {/* Free Shipping Threshold Input */}
+                                    <View>
+                                        <Text className="text-[10px] opacity-40 font-bold ml-1 mb-2 uppercase tracking-widest">Free Shipping Threshold</Text>
+                                        <View className="flex-row items-center rounded-xl px-4" style={{ backgroundColor: colors.light[100] }}>
+                                            <MaterialCommunityIcons name="gift-outline" size={20} color={colors.dark[100]} style={{ opacity: 0.5 }} />
+                                            <TextInput
+                                                value={String(ownerInfo.freeShippingThreshold ?? 0)}
+                                                onChangeText={(v) => setOwnerInfo({ ...ownerInfo, freeShippingThreshold: Number(v) || 0 })}
+                                                keyboardType="numeric"
+                                                className="flex-1 p-4 text-sm font-semibold"
+                                                style={{ color: colors.dark[100] }}
+                                                placeholder="0.00"
+                                                placeholderTextColor={`${colors.dark[100]}40`}
+                                            />
+                                            <Text className="font-bold text-xs opacity-40" style={{ color: colors.dark[100] }}>D.T</Text>
+                                        </View>
+                                        <Text className="text-[9px] text-gray-400 mt-2 ml-1 italic">Order amount to trigger free shipping</Text>
+                                    </View>
+
                                     {/* AI Prompt Input */}
                                     <View>
                                         <Text className="text-[10px] opacity-40 font-bold ml-1 mb-2 uppercase tracking-widest">AI Instructions (Manager Rules)</Text>
-                                        <View className="flex-row items-top rounded-2xl px-4 py-2" style={{ backgroundColor: colors.light[100] }}>
+                                        <View className="flex-row items-top rounded-xl px-4 py-2" style={{ backgroundColor: colors.light[100] }}>
                                             <MaterialCommunityIcons name="robot-outline" size={20} color={colors.dark[100]} style={{ opacity: 0.5, marginTop: 12 }} />
                                             <TextInput
-                                                value={ownerInfo.aiPrompt}
+                                                value={ownerInfo.aiPrompt || ""}
                                                 onChangeText={(v) => setOwnerInfo({ ...ownerInfo, aiPrompt: v })}
                                                 className="flex-1 p-4 text-sm font-semibold"
                                                 style={{ color: colors.dark[100], minHeight: 120 }}

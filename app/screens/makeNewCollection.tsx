@@ -76,6 +76,7 @@ const MakeNewCollection = () => {
             formData.append("nameFr", collection.name.fr || "");
             formData.append("type", collection.type);
             formData.append("display", String(collection.display));
+            formData.append("customizable", collection.customizable || "none");
             formData.append("products", JSON.stringify(productsSelected));
 
             const response = await axios.post(backEndUrl + "/addCollection", formData, {
@@ -108,7 +109,7 @@ const MakeNewCollection = () => {
                     <TouchableOpacity
                         onPress={handleConfirm}
                         activeOpacity={0.8}
-                        className='h-11 px-5 flex-row justify-center items-center rounded-2xl shadow-sm'
+                        className='h-11 px-5 flex-row justify-center items-center rounded-xl shadow-sm'
                         style={{ backgroundColor: colors.dark[100] }}
                     >
                         <MaterialCommunityIcons
@@ -142,7 +143,7 @@ const MakeNewCollection = () => {
                             }
                         }}
                     >
-                        <View className='w-52 h-52 rounded-2xl overflow-hidden border-4 border-white shadow-md' style={{ backgroundColor: colors.light[300] }}>
+                        <View className='w-52 h-52 rounded-xl overflow-hidden border-4 border-white shadow-md' style={{ backgroundColor: colors.light[300] }}>
                             {collection.thumbNail ? (
                                 <Image source={{ uri: collection.thumbNail }} className='w-full h-full' />
                             ) : (
@@ -159,7 +160,7 @@ const MakeNewCollection = () => {
 
                 <View className='px-5 gap-y-5'>
                     {/* Name Input Card */}
-                    <View className='bg-white p-6 rounded-[32px] shadow-sm border border-gray-100/50'>
+                    <View className='bg-white p-6 rounded-xl shadow-sm border border-gray-100/50'>
                         <View className='flex-row items-center mb-4'>
                             <View className='w-8 h-8 rounded-full items-center justify-center mr-3' style={{ backgroundColor: colors.light[200] }}>
                                 <MaterialCommunityIcons name="format-text" size={16} color={colors.dark[100]} />
@@ -170,7 +171,7 @@ const MakeNewCollection = () => {
                             placeholder='e.g. Summer Essentials 2024'
                             placeholderTextColor={colors.dark[100] + '40'}
                             value={collection?.name.fr ?? ""}
-                            className='w-full h-14 px-5 rounded-2xl font-semibold border-2 border-transparent focus:border-black/5'
+                            className='w-full h-14 px-5 rounded-xl font-semibold border-2 border-transparent focus:border-black/5'
                             style={{ backgroundColor: colors.light[150], color: colors.dark[100] }}
                             onChangeText={(e) => setCollection({
                                 ...collection,
@@ -180,7 +181,7 @@ const MakeNewCollection = () => {
                     </View>
 
                     {/* Visibility Settings Card */}
-                    <View className='bg-white p-6 rounded-[32px] shadow-sm border border-gray-100/50'>
+                    <View className='bg-white p-6 rounded-xl shadow-sm border border-gray-100/50'>
                         <View className='flex-row items-center mb-5'>
                             <View className='w-8 h-8 rounded-full items-center justify-center mr-3' style={{ backgroundColor: colors.light[200] }}>
                                 <Eye size={16} color={colors.dark[100]} />
@@ -196,7 +197,7 @@ const MakeNewCollection = () => {
                                     key={opt.id}
                                     activeOpacity={0.9}
                                     onPress={() => setCollection({ ...collection, type: opt.id as any })}
-                                    className='flex-1 p-4 rounded-2xl border-2'
+                                    className='flex-1 p-4 rounded-xl border-2'
                                     style={{
                                         backgroundColor: collection.type === opt.id ? colors.dark[100] : colors.light[150],
                                         borderColor: collection.type === opt.id ? colors.dark[100] : 'transparent'
@@ -211,7 +212,7 @@ const MakeNewCollection = () => {
                     </View>
 
                     {/* Display Style Card */}
-                    <View className='bg-white p-6 rounded-[32px] shadow-sm border border-gray-100/50'>
+                    <View className='bg-white p-6 rounded-xl shadow-sm border border-gray-100/50'>
                         <View className='flex-row items-center mb-5'>
                             <View className='w-8 h-8 rounded-full items-center justify-center mr-3' style={{ backgroundColor: colors.light[200] }}>
                                 <LayoutGrid size={16} color={colors.dark[100]} />
@@ -220,14 +221,14 @@ const MakeNewCollection = () => {
                         </View>
                         <View className='flex-row gap-x-3'>
                             {[
-                                { id: 'vertical', label: 'Grid', icon: LayoutGrid, desc: 'Normal 2x2 layout' },
+                                { id: 'vertical', label: 'Grid', icon: LayoutGrid, desc: 'Normal layout' },
                                 { id: 'horizontal', label: 'Slider', icon: LayoutList, desc: 'Horizontal scroll' }
                             ].map((opt) => (
                                 <TouchableOpacity
                                     key={opt.id}
                                     activeOpacity={0.9}
                                     onPress={() => setCollection({ ...collection, display: opt.id as any })}
-                                    className='flex-1 p-4 rounded-2xl border-2'
+                                    className='flex-1 p-4 rounded-xl border-2'
                                     style={{
                                         backgroundColor: collection.display === opt.id ? colors.dark[100] : colors.light[150],
                                         borderColor: collection.display === opt.id ? colors.dark[100] : 'transparent'
@@ -241,8 +242,44 @@ const MakeNewCollection = () => {
                         </View>
                     </View>
 
+                    {/* Customization Settings Card */}
+                    <View className='bg-white p-6 rounded-xl shadow-sm border border-gray-100/50'>
+                        <View className='flex-row items-center mb-5'>
+                            <View className='w-8 h-8 rounded-full items-center justify-center mr-3' style={{ backgroundColor: colors.light[200] }}>
+                                <MaterialCommunityIcons name="auto-fix" size={16} color={colors.dark[100]} />
+                            </View>
+                            <Text className='font-bold text-base' style={{ color: colors.dark[100] }}>Customization Feature</Text>
+                        </View>
+                        <View className='flex-row gap-x-2'>
+                            {[
+                                { id: 'none', label: 'None', icon: 'close-circle-outline', desc: 'Standard collection' },
+                                { id: 'base', label: 'Base', icon: 'necklace', desc: 'Main chains/bases' },
+                                { id: 'pendant', label: 'Pendant', icon: 'star-outline', desc: 'Charms & objects' }
+                            ].map((opt) => (
+                                <TouchableOpacity
+                                    key={opt.id}
+                                    activeOpacity={0.9}
+                                    onPress={() => setCollection({ ...collection, customizable: opt.id as any })}
+                                    className='flex-1 p-3 rounded-xl border-2'
+                                    style={{
+                                        backgroundColor: collection.customizable === opt.id ? colors.dark[100] : colors.light[150],
+                                        borderColor: collection.customizable === opt.id ? colors.dark[100] : 'transparent'
+                                    }}
+                                >
+                                    <MaterialCommunityIcons 
+                                        name={opt.icon as any} 
+                                        size={18} 
+                                        color={collection.customizable === opt.id ? colors.light[100] : colors.dark[100]} 
+                                    />
+                                    <Text className='font-bold text-[10px] mt-1.5' style={{ color: collection.customizable === opt.id ? colors.light[100] : colors.dark[100] }}>{opt.label}</Text>
+                                    <Text className='text-[8px] opacity-50 mt-0.5' style={{ color: collection.customizable === opt.id ? colors.light[100] : colors.dark[100] }}>{opt.desc}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+
                     {/* Products Management Card */}
-                    <View className='bg-white p-6 rounded-[32px] shadow-sm border border-gray-100/50 mb-10'>
+                    <View className='bg-white p-6 rounded-xl shadow-sm border border-gray-100/50 mb-10'>
                         <View className='flex-row items-center justify-between mb-5'>
                             <View className='flex-row items-center'>
                                 <View className='w-8 h-8 rounded-full items-center justify-center mr-3' style={{ backgroundColor: colors.light[200] }}>
@@ -281,7 +318,7 @@ const MakeNewCollection = () => {
                         <TouchableOpacity
                             onPress={() => setIsModalVisible(true)}
                             activeOpacity={0.8}
-                            className='w-full py-4 rounded-2xl items-center flex-row justify-center'
+                            className='w-full py-4 rounded-xl items-center flex-row justify-center'
                             style={{ backgroundColor: colors.dark[100] }}
                         >
                             <Plus size={18} color={colors.light[100]} />

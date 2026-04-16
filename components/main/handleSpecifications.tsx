@@ -4,6 +4,7 @@ import { ProductSpecificationToEdit, ProductToEditType } from '@/types';
 import React, { useState, useRef, useCallback } from 'react';
 import { ScrollView, View, Text, TextInput, Image, TouchableOpacity, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { icons, colors } from '@/constants';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { fakeSpecification } from '@/constants/data';
 import ColorPicker from 'react-native-wheel-color-picker';
 
@@ -56,6 +57,19 @@ const HandleSpecifications = ({ updatedProduct, setUpdatedProduct }: Props) => {
         });
     };
 
+    const copySpecification = (index: number) => {
+        const specToCopy = updatedProduct.specifications[index];
+        const tempId = `temp_${Date.now()}`;
+        const newSpec = {
+            ...specToCopy,
+            _id: tempId,
+        };
+        setUpdatedProduct({
+            ...updatedProduct,
+            specifications: [...(updatedProduct.specifications || []), newSpec]
+        });
+    };
+
     return (
         <View className='w-full min-h-[100px]- bg-red-500- mt-8'>
             {/* Header Section */}
@@ -66,7 +80,7 @@ const HandleSpecifications = ({ updatedProduct, setUpdatedProduct }: Props) => {
                 </View>
                 <TouchableOpacity
                     onPress={addNewSpecification}
-                    className='bg-black px-4 py-2.5 rounded-2xl flex-row items-center shadow-lg'
+                    className='bg-black px-4 py-2.5 rounded-xl flex-row items-center shadow-lg'
                 >
                     <Image source={icons.plus} className='w-3 h-3 mr-2' style={{ tintColor: 'white' }} />
                     <Text className='text-white font-black text-[10px] uppercase'>Add Variant</Text>
@@ -97,15 +111,23 @@ const HandleSpecifications = ({ updatedProduct, setUpdatedProduct }: Props) => {
                                     {specification.unlimited ? '∞ UNLIMITED' : `VARIANT #${index + 1}`}
                                 </Text>
                             </View>
-                            <TouchableOpacity
-                                onPress={() => {
-                                    const filtered = updatedProduct.specifications?.filter((_, i) => i !== index);
-                                    setUpdatedProduct({ ...updatedProduct, specifications: filtered });
-                                }}
-                                className='bg-red-50 w-8 h-8 items-center justify-center rounded-full border border-red-100'
-                            >
-                                <Text className='text-red-500 font-bold'>✕</Text>
-                            </TouchableOpacity>
+                            <View className='flex-row items-center gap-2'>
+                                <TouchableOpacity
+                                    onPress={() => copySpecification(index)}
+                                    className='bg-gray-100 w-8 h-8 items-center justify-center rounded-full border border-gray-200'
+                                >
+                                    <MaterialCommunityIcons name="content-copy" size={12} color="black" />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        const filtered = updatedProduct.specifications?.filter((_, i) => i !== index);
+                                        setUpdatedProduct({ ...updatedProduct, specifications: filtered });
+                                    }}
+                                    className='bg-red-50 w-8 h-8 items-center justify-center rounded-full border border-red-100'
+                                >
+                                    <Text className='text-red-500 font-bold'>✕</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
 
                         {/* Zone 1: Aesthetic Attributes */}
@@ -206,7 +228,7 @@ const HandleSpecifications = ({ updatedProduct, setUpdatedProduct }: Props) => {
 
                             <View>
                                 <Text className='text-gray-400 text-[9px] font-black uppercase tracking-widest mb-2 ml-1'>Selling Price</Text>
-                                <View className="flex-row items-center bg-black rounded-2xl px-5 h-[56px] shadow-lg shadow-black/20">
+                                <View className="flex-row items-center bg-black rounded-xl px-5 h-[56px] shadow-lg shadow-black/20">
                                     <TextInput
                                         value={specification.price?.toString() || ''}
                                         keyboardType='decimal-pad'
@@ -275,7 +297,7 @@ const HandleSpecifications = ({ updatedProduct, setUpdatedProduct }: Props) => {
                             <View className="flex-row items-center flex-1">
                                 <View
                                     style={{ backgroundColor: tempColor }}
-                                    className='w-14 h-14 rounded-2xl border-4 border-gray-100 shadow-sm'
+                                    className='w-14 h-14 rounded-xl border-4 border-gray-100 shadow-sm'
                                 />
                                 <View className="ml-4">
                                     <Text className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Active Hex</Text>
@@ -286,7 +308,7 @@ const HandleSpecifications = ({ updatedProduct, setUpdatedProduct }: Props) => {
                             {/* Black Confirm Button inside the card */}
                             <TouchableOpacity
                                 onPress={confirmColor}
-                                className="bg-black h-14 w-14 rounded-2xl items-center justify-center shadow-lg"
+                                className="bg-black h-14 w-14 rounded-xl items-center justify-center shadow-lg"
                             >
                                 <Image source={icons.check} className='w-5 h-5 rotate-45-' style={{ tintColor: 'white' }} />
                                 {/* استعملت أيقونة الـ plus مع تدويرها لتشبه علامة التأكيد بشكل فني */}

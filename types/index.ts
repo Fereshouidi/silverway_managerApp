@@ -143,6 +143,7 @@ export type OwnerInfoType = {
   topCollections: string[];  // IDs
   collectionsInSideBar: string[]; // IDs
   shippingCost: number;
+  freeShippingThreshold: number;
   aiPrompt: string;
 }
 
@@ -171,7 +172,10 @@ export type ProductToEditType = {
   price: string | null;
   oldPrice: string | null;
   thumbNail: string | null;
-  images: string[];
+  images: {
+    uri: string;
+    specification?: string | ProductSpecification | null;
+  }[];
   description: {
     fr: string | null;
     en: string | null;
@@ -226,7 +230,8 @@ export type CollectionType = {
   thumbNail?: string | null;
   status?: "active" | "deleted" | "archived"
   type: "private" | "public";
-  display: "vertical" | "horizontal"
+  display: "vertical" | "horizontal";
+  customizable?: "none" | "base" | "pendant";
 }
 
 export interface PurchaseType {
@@ -240,6 +245,8 @@ export interface PurchaseType {
   cart?: string | null;
   order?: string | null;
   status?: "viewed" | "inCart" | "ordered" | 'delivered'
+  isCustomized?: boolean;
+  customizedCharms?: { charm: string | ProductType, charmId: string, spec?: string, x: number, y: number }[];
   createdAt?: Date | null;
   updatedAt?: Date | null;
 }

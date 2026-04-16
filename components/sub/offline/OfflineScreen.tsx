@@ -64,7 +64,7 @@ const OfflineScreen: React.FC<OfflineScreenProps> = ({ onRetry }) => {
                 <TouchableOpacity
                     onPress={onRetry}
                     activeOpacity={0.8}
-                    className="bg-white w-full h-16 rounded-2xl items-center justify-center shadow-xl shadow-white/10"
+                    className="bg-white w-full h-16 rounded-xl items-center justify-center shadow-xl shadow-white/10"
                 >
                     <Text className="text-black font-black uppercase tracking-widest">Retry Connection</Text>
                 </TouchableOpacity>

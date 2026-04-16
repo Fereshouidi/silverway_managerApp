@@ -23,7 +23,7 @@ const ContactInfoEditor = ({ contact, setContact }: Props) => {
     };
 
     return (
-        <View className="w-full px-5 py-6 rounded-3xl mt-5" style={{ backgroundColor: colors.light[200] }}>
+        <View className="w-full px-5 py-6 rounded-xl mt-5" style={{ backgroundColor: colors.light[200] }}>
             <Text className="text-lg font-bold mb-5" style={{ color: colors.dark[100] }}>
                 Contact Details
             </Text>
@@ -32,7 +32,7 @@ const ContactInfoEditor = ({ contact, setContact }: Props) => {
             <View className="mb-4">
                 <Text className="text-xs mb-1 ml-1 opacity-50" style={{ color: colors.dark[100] }}>Official Email</Text>
                 <View
-                    className={`flex-row items-center p-3 rounded-2xl border ${contact.email && !isValidEmail(contact.email) ? 'border-red-500' : 'border-transparent'}`}
+                    className={`flex-row items-center p-3 rounded-xl border ${contact.email && !isValidEmail(contact.email) ? 'border-red-500' : 'border-transparent'}`}
                     style={{ backgroundColor: colors.light[100] }}
                 >
                     <Ionicons name="mail-outline" size={20} color={contact.email && !isValidEmail(contact.email) ? '#ef4444' : colors.dark[100]} className="mr-2" />
@@ -54,7 +54,7 @@ const ContactInfoEditor = ({ contact, setContact }: Props) => {
             {/* Mail Password Field */}
             <View className="mb-4">
                 <Text className="text-xs mb-1 ml-1 opacity-50" style={{ color: colors.dark[100] }}>Mail App Password</Text>
-                <View className="flex-row items-center p-3 rounded-2xl" style={{ backgroundColor: colors.light[100] }}>
+                <View className="flex-row items-center p-3 rounded-xl" style={{ backgroundColor: colors.light[100] }}>
                     <Ionicons name="key-outline" size={20} color={colors.dark[100]} className="mr-2" />
                     <TextInput
                         value={contact.mailPassword}
@@ -78,7 +78,7 @@ const ContactInfoEditor = ({ contact, setContact }: Props) => {
             <View>
                 <Text className="text-xs mb-1 ml-1 opacity-50" style={{ color: colors.dark[100] }}>Phone Number</Text>
                 <View
-                    className={`flex-row items-center p-3 rounded-2xl border ${contact.phone && !isValidPhone(contact.phone) ? 'border-red-500' : 'border-transparent'}`}
+                    className={`flex-row items-center p-3 rounded-xl border ${contact.phone && !isValidPhone(contact.phone) ? 'border-red-500' : 'border-transparent'}`}
                     style={{ backgroundColor: colors.light[100] }}
                 >
                     <Ionicons name="call-outline" size={20} color={contact.phone && !isValidPhone(contact.phone) ? '#ef4444' : colors.dark[100]} className="mr-2" />

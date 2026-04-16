@@ -56,7 +56,7 @@ const SearchBar = ({ setProducts }: Props) => {
     return (
         <View style={styles.container}>
             <View
-                className="w-[90%] h-[54px] rounded-2xl flex-row items-center px-4 border-[0.5px]"
+                className="w-[90%] h-[54px] rounded-xl flex-row items-center px-4 border-[0.5px]"
                 style={{
                     backgroundColor: colors.light[100],
                     borderColor: colors.light[300]

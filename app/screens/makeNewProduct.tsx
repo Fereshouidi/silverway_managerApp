@@ -8,14 +8,14 @@ import { colors, icons } from '@/constants';
 import { useAdmin } from '@/contexts/admin';
 import { useLoadingScreen } from '@/contexts/loadingScreen';
 import { useStatusBanner } from '@/contexts/StatusBanner';
-import { pickImage } from '@/lib';
+import { pickImage, removeBackground } from '@/lib';
 import { ProductToEditType } from '@/types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import axios from 'axios';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { router, Stack } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, Keyboard, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Keyboard, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const MakeNewProduct = () => {
@@ -35,6 +35,7 @@ const MakeNewProduct = () => {
         specifications: [],
         collections: [] // ستبدأ كمصفوفة فارغة وتُملأ بـ IDs نصوص
     });
+    const [removingThumbBg, setRemovingThumbBg] = useState(false);
 
     const handleConfirm = async () => {
         if (!admin?.accesses?.includes("Manage Products")) {
@@ -174,10 +175,10 @@ const MakeNewProduct = () => {
                     {/* Thumbnail & Basics */}
                     <View className='flex flex-row justify-between items-start mb-8'>
                         <TouchableOpacity
-                            className='w-[130px] h-[130px] rounded-[35px] overflow-hidden border-4 border-white shadow-xl shadow-black/10 justify-center items-center'
+                            className='w-[130px] h-[130px] rounded-xl overflow-hidden border-4 border-white shadow-xl shadow-black/10 justify-center items-center'
                             style={{ backgroundColor: colors.light[200] }}
                             onPress={async () => {
-                                const result = await pickImage((msg) => setStatusBanner(true, msg, "error"));
+                                const result: any = await pickImage((msg) => setStatusBanner(true, msg, "error"));
                                 if (!result) return;
                                 const uri = typeof result === 'string' ? result : result?.uri;
                                 const comp = await ImageManipulator.manipulateAsync(uri, [{ resize: { width: 1000 } }], { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG });
@@ -189,6 +190,39 @@ const MakeNewProduct = () => {
                             ) : (
                                 <Image source={icons.editText} className='w-8 h-8 opacity-20' />
                             )}
+                            {/* Remove BG — top left */}
+                            {updatedProduct.thumbNail ? (
+                                <TouchableOpacity
+                                    onPress={async () => {
+                                        if (removingThumbBg) return;
+                                        setRemovingThumbBg(true);
+                                        try {
+                                            const result = await removeBackground(updatedProduct.thumbNail);
+                                            if (result) {
+                                                setUpdatedProduct(prev => ({ ...prev, thumbNail: result }));
+                                            } else {
+                                                setStatusBanner(true, 'Background removal failed', 'error');
+                                            }
+                                        } catch (e) {
+                                            setStatusBanner(true, 'Background removal failed', 'error');
+                                        } finally {
+                                            setRemovingThumbBg(false);
+                                        }
+                                    }}
+                                    className='absolute top-2 left-2 bg-purple-600 h-7 px-3 rounded-full items-center justify-center shadow-sm flex-row'
+                                    disabled={removingThumbBg}
+                                >
+                                    {removingThumbBg ? (
+                                        <ActivityIndicator size={12} color='white' />
+                                    ) : (
+                                        <>
+                                            <MaterialCommunityIcons name="auto-fix" size={12} color="white" />
+                                            <Text className='text-white text-[8px] font-black uppercase ml-1.5'>bg-remove</Text>
+                                        </>
+                                    )}
+                                </TouchableOpacity>
+                            ) : null}
+                            {/* Edit icon — bottom right */}
                             <View className='absolute bottom-0 right-0 p-2 bg-black/60 rounded-tl-2xl'>
                                 <Image source={icons.editText} className='w-3 h-3' style={{ tintColor: 'white' }} />
                             </View>
@@ -203,7 +237,7 @@ const MakeNewProduct = () => {
                                     placeholder="e.g. Luxury Watch"
                                     placeholderTextColor="#A3A3A3"
                                     onChangeText={(text) => setUpdatedProduct({ ...updatedProduct, name: { ...updatedProduct.name, fr: text } })}
-                                    className='bg-white rounded-2xl p-4 text-sm font-bold shadow-sm border border-gray-50'
+                                    className='bg-white rounded-xl p-4 text-sm font-bold shadow-sm border border-gray-50'
                                 />
                             </View>
                             <View className='flex-row gap-x-2'>
@@ -215,7 +249,7 @@ const MakeNewProduct = () => {
                                         placeholder="0.00"
                                         placeholderTextColor="#A3A3A3"
                                         onChangeText={(text) => setUpdatedProduct({ ...updatedProduct, price: text })}
-                                        className='bg-white rounded-2xl p-4 text-sm font-bold shadow-sm border border-gray-50'
+                                        className='bg-white rounded-xl p-4 text-sm font-bold shadow-sm border border-gray-50'
                                         keyboardType="decimal-pad"
                                     />
                                 </View>
@@ -227,7 +261,7 @@ const MakeNewProduct = () => {
                                         placeholder="0.00"
                                         placeholderTextColor="#A3A3A3"
                                         onChangeText={(text) => setUpdatedProduct({ ...updatedProduct, oldPrice: text })}
-                                        className='bg-white rounded-2xl p-4 text-sm font-bold shadow-sm border border-gray-50'
+                                        className='bg-white rounded-xl p-4 text-sm font-bold shadow-sm border border-gray-50'
                                         keyboardType="decimal-pad"
                                     />
                                 </View>
@@ -242,11 +276,11 @@ const MakeNewProduct = () => {
                             <Text className='text-gray-400 text-[10px] font-bold uppercase tracking-widest'>Product Details & Story</Text>
                         </View>
                         <TextInput
-                            value={updatedProduct?.description.fr}
+                            value={updatedProduct?.description.fr || ""}
                             placeholder="Tell more about your product..."
                             placeholderTextColor="#A3A3A3"
                             onChangeText={(text) => setUpdatedProduct({ ...updatedProduct, description: { ...updatedProduct.description, fr: text } })}
-                            className='bg-white rounded-[30px] p-5 text-sm min-h-[140px] shadow-sm border border-gray-50'
+                            className='bg-white rounded-xl p-5 text-sm min-h-[140px] shadow-sm border border-gray-50'
                             multiline
                             textAlignVertical="top"
                         />

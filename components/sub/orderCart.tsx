@@ -8,12 +8,12 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 type props = {
     order: OrderType;
     deliveryWorker: DeliveryWorkerType | undefined;
-    onPress: () => void; 
+    onPress: () => void;
 }
 
 // استخدام memo لمنع إعادة الرندرة غير الضرورية أثناء التمرير في القائمة
 const OrderCart = memo(({ order, deliveryWorker, onPress }: props) => {
-    
+
     // حساب التنسيق اللوني بناءً على الحالة
     const theme = useMemo(() => {
         switch (order.status) {
@@ -24,16 +24,16 @@ const OrderCart = memo(({ order, deliveryWorker, onPress }: props) => {
     }, [order.status]);
 
     // حساب السعر الإجمالي مرة واحدة
-    const totalPrice = useMemo(() => 
-        (calcTotalPrice(order) + (order?.shippingCoast || 0)).toFixed(2), 
-    [order]);
+    const totalPrice = useMemo(() =>
+        (calcTotalPrice(order) + (order?.shippingCoast || 0)).toFixed(2),
+        [order]);
 
     return (
         <TouchableOpacity
             activeOpacity={0.9}
             onPress={onPress}
             style={styles.card}
-            className="mb-4 mx-1"
+            className="mb-1 mx-1"
         >
             <View className="p-4">
                 {/* Header: رقم الطلب والحالة */}
@@ -47,7 +47,7 @@ const OrderCart = memo(({ order, deliveryWorker, onPress }: props) => {
                             <Text className="text-gray-400 text-[10px] font-bold">{timeAgo(order.createdAt || "")}</Text>
                         </View>
                     </View>
-                    
+
                     <View style={{ backgroundColor: theme.bg }} className="flex-row items-center px-3 py-1.5 rounded-lg">
                         <MaterialCommunityIcons name={theme.icon} size={14} color={theme.color} />
                         <Text style={{ color: theme.color }} className="ml-1.5 text-[10px] font-black uppercase tracking-tighter">
@@ -57,14 +57,14 @@ const OrderCart = memo(({ order, deliveryWorker, onPress }: props) => {
                 </View>
 
                 {/* Middle Section: العميل والعنوان */}
-                <View className="flex-row items-center mb-4 bg-gray-50/50 p-3 rounded-2xl border border-gray-100">
+                <View className="flex-row items-center mb-4 bg-gray-50/50 p-3 rounded-xl border border-gray-100">
                     <View className="flex-row mr-3">
                         {order.purchases?.slice(0, 2).map((p, i) => (
                             <View key={p._id} style={[styles.imageWrapper, { marginLeft: i > 0 ? -15 : 0, zIndex: 10 - i }]}>
-                                <Image 
+                                <Image
                                     //@ts-ignore
-                                    source={{ uri: p.product?.thumbNail }} 
-                                    className="w-9 h-9 rounded-full bg-gray-200" 
+                                    source={{ uri: p.product?.thumbNail }}
+                                    className="w-9 h-9 rounded-full bg-gray-200"
                                 />
                             </View>
                         ))}
@@ -88,7 +88,7 @@ const OrderCart = memo(({ order, deliveryWorker, onPress }: props) => {
 
                 {/* Footer: أزرار التواصل */}
                 <View className="flex-row gap-2">
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => deliveryWorker?.phone && handleCall(deliveryWorker.phone.toString())}
                         style={styles.actionBtn}
                         className="bg-blue-50 border border-blue-100"
@@ -97,7 +97,7 @@ const OrderCart = memo(({ order, deliveryWorker, onPress }: props) => {
                         <Text className="ml-2 text-[11px] font-black text-blue-700 uppercase">Driver</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         //@ts-ignore
                         onPress={() => handleCall(order.purchases[0]?.client?.phone?.toString() || "")}
                         style={styles.actionBtn}
@@ -117,37 +117,38 @@ const OrderCart = memo(({ order, deliveryWorker, onPress }: props) => {
 });
 
 const styles = StyleSheet.create({
-    card: { 
-        backgroundColor: 'white', 
-        borderRadius: 28, 
+    card: {
+        backgroundColor: 'white',
+        borderRadius: 10,
         borderWidth: 1,
         borderColor: '#f3f4f6',
-        ...Platform.select({ 
-            ios: { 
-                shadowColor: "#000", 
-                shadowOffset: { width: 0, height: 8 }, 
-                shadowOpacity: 0.04, 
-                shadowRadius: 12 
-            }, 
-            android: { 
-                elevation: 2 
-            } 
-        }) 
+        ...Platform.select({
+            ios: {
+                shadowColor: "#555",
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.04,
+                shadowRadius: 12
+            },
+            android: {
+                elevation: 15,
+                shadowColor: "#555",
+            }
+        })
     },
-    imageWrapper: { 
-        padding: 2, 
-        backgroundColor: 'white', 
+    imageWrapper: {
+        padding: 2,
+        backgroundColor: 'white',
         borderRadius: 50,
         borderWidth: 1,
         borderColor: '#f3f4f6'
     },
-    actionBtn: { 
-        flex: 1, 
-        height: 44, 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        borderRadius: 14 
+    actionBtn: {
+        flex: 1,
+        height: 44,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 14
     }
 });
 

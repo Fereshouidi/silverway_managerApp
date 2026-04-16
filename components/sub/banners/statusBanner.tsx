@@ -1,7 +1,7 @@
 import { BannerType, useStatusBanner } from '@/contexts/StatusBanner';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useRef } from 'react';
-import { Animated, Dimensions, Platform, StyleSheet, Text, View } from 'react-native';
+import { Animated, Dimensions, Platform, StyleSheet, Text, View, Modal, TouchableOpacity } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -65,58 +65,74 @@ const StatusBanner = () => {
     const config = getConfig(type);
 
     return (
-        <Animated.View
-            style={[
-                styles.container,
-                {
-                    transform: [{ translateY: slideAnim }],
-                    backgroundColor: config.bgColor,
-                    borderColor: config.borderColor,
-                },
-            ]}
+        <Modal
+            visible={statusBannerExist}
+            transparent={true}
+            animationType="none"
+            statusBarTranslucent={true}
         >
-            <View className="flex-row items-center gap-3">
-                <View
-                    className="w-8 h-8 rounded-full items-center justify-center"
-                    style={{ backgroundColor: config.color + '20' }}
+            <View style={styles.overlay} pointerEvents="box-none">
+                <Animated.View
+                    style={[
+                        styles.container,
+                        {
+                            transform: [{ translateY: slideAnim }],
+                            backgroundColor: config.bgColor,
+                            borderColor: config.borderColor,
+                        },
+                    ]}
                 >
-                    <MaterialCommunityIcons name={config.icon as any} size={20} color={config.color} />
-                </View>
-                <View className="flex-1">
-                    <Text
-                        className="text-[15px] font-semibold"
-                        style={{ color: '#1a1a1a' }}
-                        numberOfLines={2}
-                    >
-                        {text}
-                    </Text>
-                </View>
-                <MaterialCommunityIcons
-                    name="close"
-                    size={18}
-                    color="#9ca3af"
-                    onPress={() => setStatusBanner(false)}
-                />
+                    <View className="flex-row items-center gap-3">
+                        <View
+                            className="w-10 h-10 rounded-xl items-center justify-center shadow-sm"
+                            style={{ backgroundColor: config.color + '20' }}
+                        >
+                            <MaterialCommunityIcons name={config.icon as any} size={22} color={config.color} />
+                        </View>
+                        <View className="flex-1 px-1">
+                            <Text
+                                className="text-[14px] font-black tracking-tight"
+                                style={{ color: '#111827' }}
+                                numberOfLines={2}
+                            >
+                                {text}
+                            </Text>
+                        </View>
+                        <TouchableOpacity
+                            onPress={() => setStatusBanner(false)}
+                            className="p-2 bg-white/50 rounded-xl"
+                        >
+                            <MaterialCommunityIcons
+                                name="close"
+                                size={18}
+                                color="#9ca3af"
+                            />
+                        </TouchableOpacity>
+                    </View>
+                </Animated.View>
             </View>
-        </Animated.View>
+        </Modal>
     );
 };
 
 const styles = StyleSheet.create({
+    overlay: {
+        flex: 1,
+    },
     container: {
         position: 'absolute',
-        top: Platform.OS === 'ios' ? 40 : 20,
+        top: Platform.OS === 'ios' ? 60 : 40,
         left: 20,
         right: 20,
-        padding: 14,
-        borderRadius: 20,
+        padding: 16,
+        borderRadius: 28,
         borderWidth: 1,
         zIndex: 99999,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-        elevation: 5,
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.12,
+        shadowRadius: 20,
+        elevation: 10,
     },
 });
 

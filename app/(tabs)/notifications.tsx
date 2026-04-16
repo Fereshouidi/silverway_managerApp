@@ -35,6 +35,7 @@ const NotificationsScreen = () => {
   const [refreshing, setRefreshing] = useState(false); // حالة التحديث الجديدة
   const [hasMore, setHasMore] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<OrderType | null>(null);
+  const [deliveryWorker, setDeliveryWorker] = useState<any>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [clientModalVisible, setClientModalVisible] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState<NotificationItem | null>(null);
@@ -44,7 +45,19 @@ const NotificationsScreen = () => {
   useEffect(() => {
     fetchNotifications(true);
     markAsRead();
+    fetchDeliveryWorker();
   }, []);
+
+  const fetchDeliveryWorker = async () => {
+    try {
+      const { data } = await axios.get(`${backEndUrl}/getDeliveryWorker`);
+      if (data.deliveryWorker) {
+        setDeliveryWorker(data.deliveryWorker);
+      }
+    } catch (error) {
+      console.log('Error fetching delivery worker:', error);
+    }
+  };
 
   const fetchNotifications = async (isFirstLoad = false, isRefreshing = false) => {
     if (isFirstLoad) {
@@ -84,6 +97,7 @@ const NotificationsScreen = () => {
     setRefreshing(true);
     setHasMore(true); // إعادة تفعيل التحميل اللانهائي
     fetchNotifications(true, true);
+    fetchDeliveryWorker();
   }, []);
 
   const markAsRead = async () => {
@@ -275,6 +289,7 @@ const NotificationsScreen = () => {
         isVisible={isModalVisible}
         onClose={() => setIsModalVisible(false)}
         order={selectedOrder}
+        deliveryWorker={deliveryWorker}
         onUpdateSuccess={() => { }}
       />
 
@@ -304,7 +319,7 @@ const NotificationsScreen = () => {
                 <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
 
                   {/* 1. Action Details */}
-                  <View className="mb-6 bg-gray-50 p-5 rounded-3xl border border-gray-100">
+                  <View className="mb-6 bg-gray-50 p-5 rounded-xl border border-gray-100">
                     <Text className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">What Happened</Text>
 
                     <View className="flex-row items-center mb-2">
@@ -331,7 +346,7 @@ const NotificationsScreen = () => {
                       </View>
                     )}
                     {selectedNotification.actionDetails?.comment && (
-                      <View className="bg-white p-3 rounded-2xl border border-gray-100 mb-3">
+                      <View className="bg-white p-3 rounded-xl border border-gray-100 mb-3">
                         <Text className="text-xs text-gray-600 italic">"{selectedNotification.actionDetails.comment}"</Text>
                       </View>
                     )}
@@ -350,7 +365,7 @@ const NotificationsScreen = () => {
                   {selectedNotification.client ? (
                     <View className="mb-6">
                       <Text className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 ml-1">The Customer</Text>
-                      <View className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex-row items-center justify-between">
+                      <View className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex-row items-center justify-between">
                         <TouchableOpacity
                           className="flex-row items-center flex-1"
                           onPress={() => {
@@ -359,7 +374,13 @@ const NotificationsScreen = () => {
                           }}
                         >
                           <View className="w-12 h-12 bg-black rounded-full items-center justify-center mr-4">
-                            <MaterialCommunityIcons name="account" size={22} color="white" />
+                            {selectedNotification.client.fullName ? (
+                              <Text className="text-xl font-bold text-white uppercase">
+                                {selectedNotification.client.fullName.charAt(0)}
+                              </Text>
+                            ) : (
+                              <MaterialCommunityIcons name="account" size={22} color="white" />
+                            )}
                           </View>
                           <View className="flex-1">
                             <Text className="text-sm font-bold text-black" numberOfLines={1}>{selectedNotification.client.fullName || 'Unknown'}</Text>
@@ -388,7 +409,7 @@ const NotificationsScreen = () => {
                     <View className="mb-8">
                       <Text className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 ml-1">The Product</Text>
                       <TouchableOpacity
-                        className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex-row items-center"
+                        className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex-row items-center"
                         onPress={() => {
                           const pId = selectedNotification.product?._id || selectedNotification.productId;
                           if (!pId) return;
@@ -398,9 +419,9 @@ const NotificationsScreen = () => {
                         }}
                       >
                         {selectedNotification.product?.thumbNail ? (
-                          <Image source={{ uri: selectedNotification.product.thumbNail }} className="w-14 h-14 rounded-2xl bg-gray-50" />
+                          <Image source={{ uri: selectedNotification.product.thumbNail }} className="w-14 h-14 rounded-xl bg-gray-50" />
                         ) : (
-                          <View className="w-14 h-14 rounded-2xl bg-red-50 items-center justify-center">
+                          <View className="w-14 h-14 rounded-xl bg-red-50 items-center justify-center">
                             <MaterialCommunityIcons name="package-variant-remove" size={24} color="#ef4444" />
                           </View>
                         )}

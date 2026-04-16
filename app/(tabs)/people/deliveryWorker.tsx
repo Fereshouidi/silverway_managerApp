@@ -147,7 +147,7 @@ const DeliveryWorker = ({ workerData: initialData, onRefresh }: DeliveryWorkerPr
           </View>
 
           <View
-            className="w-full p-8 rounded-[40px]"
+            className="w-full p-8 rounded-xl"
             style={{ backgroundColor: colors.light[200] }}
           >
             <View className="items-center mb-8">
@@ -209,7 +209,7 @@ const DeliveryWorker = ({ workerData: initialData, onRefresh }: DeliveryWorkerPr
             <TouchableOpacity
               disabled={updating}
               onPress={handleUpdate}
-              className="mt-8 w-full py-5 rounded-[25px] items-center"
+              className="mt-8 w-full py-5 rounded-xl items-center"
               style={{ backgroundColor: colors.dark[100] }}
             >
               {updating ? (

@@ -48,7 +48,7 @@ const PubsSection = ({ pubData, setPubData }: Props) => {
             <TouchableOpacity onPress={() => pickImage(banner, size)} className="relative">
                 <Image
                     source={{ uri: pubData?.[banner]?.[size] }}
-                    className="w-full h-28 rounded-2xl bg-slate-200"
+                    className="w-full h-28 rounded-xl bg-slate-200"
                     resizeMode="cover"
                 />
                 <View
@@ -79,7 +79,7 @@ const PubsSection = ({ pubData, setPubData }: Props) => {
                 <View className="gap-y-2">
                     <Text className="text-[10px] opacity-40 font-bold ml-1 uppercase">Top Bar Message (FR)</Text>
                     <TextInput
-                        className="p-4 rounded-2xl text-xs font-semibold"
+                        className="p-4 rounded-xl text-xs font-semibold"
                         style={{ backgroundColor: colors.light[100], color: colors.dark[100] }}
                         value={pubData?.topBar?.fr}
                         onChangeText={(t) => updateTopBar(t, 'fr')}

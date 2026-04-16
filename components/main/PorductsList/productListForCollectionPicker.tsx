@@ -138,7 +138,7 @@ const ProductListForCollectionPicker = ({
             <View className="px-5 py-4 gap-y-4">
                 {/* Search Bar */}
                 <View
-                    className="flex-row items-center px-4 h-12 rounded-2xl border border-gray-100"
+                    className="flex-row items-center px-4 h-12 rounded-xl border border-gray-100"
                     style={{ backgroundColor: colors.light[200] }}
                 >
                     <Search size={18} color={colors.dark[100]} opacity={0.4} />
@@ -216,7 +216,7 @@ const ProductListForCollectionPicker = ({
                                 }}
                                 className="flex-row items-center p-3 rounded-[24px] bg-white border border-gray-50 shadow-sm shadow-black/5"
                             >
-                                <Image source={{ uri: item.thumbNail || '' }} className="w-14 h-14 rounded-2xl bg-gray-100" />
+                                <Image source={{ uri: item.thumbNail || '' }} className="w-14 h-14 rounded-xl bg-gray-100" />
                                 <View className="flex-1 ml-4">
                                     <Text numberOfLines={1} className="font-bold text-sm text-black uppercase tracking-tight">{item.name.fr}</Text>
                                     <Text className="text-gray-400 text-[10px] font-bold mt-1">{item.price} DZD</Text>

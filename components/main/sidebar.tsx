@@ -82,15 +82,15 @@ export default function Sidebar({ closeDrawer }: SidebarProps) {
     <View className="flex-1" style={{ backgroundColor: colors.light[100] }}>
       {/* Header: User & Brand Info */}
       <View className="pt-16 px-6 pb-6 border-b border-gray-100">
-        <View className="w-full h-fit rounded-2xl flex items-center justify-center my-6">
+        <View className="w-full h-fit rounded-xl flex items-center justify-center my-6">
           {ownerInfo?.logo?.light ? (
             <Image
               source={{ uri: ownerInfo.logo.light }}
-              className="w-20 h-20 bg-gray-100 rounded-2xl"
+              className="w-20 h-20 bg-gray-100 rounded-xl"
               resizeMode="contain"
             />
           ) : (
-            <View className="w-24 h-24 bg-gray-200 rounded-2xl items-center justify-center">
+            <View className="w-24 h-24 bg-gray-200 rounded-xl items-center justify-center">
               <MaterialCommunityIcons name="image-off-outline" size={30} color={colors.dark[100]} />
             </View>
           )}
@@ -116,7 +116,7 @@ export default function Sidebar({ closeDrawer }: SidebarProps) {
             <Pressable
               key={item.key}
               onPress={() => handleNavigation(item)}
-              className="flex-row items-center px-4 py-4 mb-2 rounded-2xl active:opacity-60"
+              className="flex-row items-center px-4 py-4 mb-2 rounded-xl active:opacity-60"
               style={{
                 backgroundColor: active ? colors.dark[100] : 'transparent'
               }}
@@ -147,7 +147,7 @@ export default function Sidebar({ closeDrawer }: SidebarProps) {
       <View className="p-3 border-t border-gray-50">
         <Pressable
           onPress={() => handleNavigation({ key: 'logout', title: 'Sign Out', route: '', icon: 'logout', isLogout: true })}
-          className="flex-row items-center px-4 py-4 rounded-2xl active:opacity-60"
+          className="flex-row items-center px-4 py-4 rounded-xl active:opacity-60"
           style={{ backgroundColor: 'transparent' }}
         >
           <View

@@ -17,7 +17,7 @@ type productCardType = {
 const ProductCard = ({
     product,
     className,
-    productsSelected, 
+    productsSelected,
     setProductsSelected
 }: productCardType) => {
 
@@ -47,13 +47,13 @@ const ProductCard = ({
     };
 
     return (
-        <TouchableOpacity 
+        <TouchableOpacity
             activeOpacity={0.8}
             onPress={handlePress}
             onLongPress={toggleSelect} // الضغط المطول يبدأ عملية التحديد
             className={`flex flex-col items-center p-2 mb-2 ${className}`}
             style={{
-                borderRadius: 20,
+                borderRadius: 10,
                 backgroundColor: isSelected ? colors.dark[100] : colors.light[100],
                 opacity: isHidden && !isSelected ? 0.5 : 1, // تحسين رؤية المخفي
                 ...Platform.select({
@@ -68,9 +68,9 @@ const ProductCard = ({
             }}
         >
             {/* الصورة والحالة */}
-            <View className='w-full h-[170px] rounded-2xl overflow-hidden relative bg-gray-100'>
+            <View className='w-full h-[170px] rounded-xl overflow-hidden relative bg-gray-100'>
                 {product.thumbNail ? (
-                    <Image 
+                    <Image
                         source={{ uri: product.thumbNail }}
                         className='w-full h-full'
                         resizeMode="cover"
@@ -88,8 +88,8 @@ const ProductCard = ({
 
                 {/* علامة المنتج المخفي */}
                 {isHidden && (
-                    <View 
-                        className="absolute top-2 right-2 px-2 py-1 rounded-lg"
+                    <View
+                        className="absolute top-2 right-2 px-2 py-1 rounded-xl"
                         style={{ backgroundColor: colors.light[100] }}
                     >
                         <Text style={{ color: colors.dark[100], fontSize: 10, fontWeight: 'bold' }}>HIDDEN</Text>
@@ -99,7 +99,7 @@ const ProductCard = ({
 
             {/* تفاصيل المنتج */}
             <View className="w-full mt-3 px-1">
-                <Text 
+                <Text
                     className='text-sm font-medium text-center'
                     numberOfLines={1}
                     style={{ color: isSelected ? colors.light[100] : colors.dark[100] }}
@@ -107,7 +107,7 @@ const ProductCard = ({
                     {product.name.en ? handleLongText(product.name.en, 25) : "No Name"}
                 </Text>
 
-                <Text 
+                <Text
                     className='text-lg font-bold text-center mt-1'
                     style={{ color: isSelected ? colors.light[100] : colors.dark[100] }}
                 >

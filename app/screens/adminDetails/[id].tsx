@@ -1,6 +1,7 @@
 import { backEndUrl } from '@/api';
 import { colors } from '@/constants';
 import { accessesDispo } from '@/constants/data';
+import { useAdmin } from '@/contexts/admin';
 import { useStatusBanner } from '@/contexts/StatusBanner';
 import { isValidEmail, isValidPhone } from '@/lib';
 import { AdminAccess, AdminType } from '@/types';
@@ -27,6 +28,7 @@ const AdminProfileScreen = () => {
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const { setStatusBanner } = useStatusBanner();
+    const { admin: currentAdmin } = useAdmin();
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
     const [admin, setAdmin] = useState<AdminType | null>(null);
@@ -70,7 +72,10 @@ const AdminProfileScreen = () => {
         Keyboard.dismiss();
 
         try {
-            const { data } = await axios.put(`${backEndUrl}/updateAdmin`, { updatedRow: formData });
+            const { data } = await axios.put(`${backEndUrl}/updateAdmin`, {
+                updatedRow: formData,
+                currentAdminId: currentAdmin?._id
+            });
 
             if (data.success) {
                 // 1. اهتزاز النجاح (شعور ملموس بالنجاح)
@@ -124,7 +129,7 @@ const AdminProfileScreen = () => {
                         setLoading(true);
                         try {
                             const { data } = await axios.delete(`${backEndUrl}/deleteAdmin`, {
-                                params: { id: id }
+                                params: { id: id, currentAdminId: currentAdmin?._id }
                             });
                             if (data.success) {
                                 setStatusBanner(true, "Admin deleted successfully", "success");
@@ -168,7 +173,10 @@ const AdminProfileScreen = () => {
                                 isVerified: false,
                                 accesses: []
                             };
-                            const { data } = await axios.put(`${backEndUrl}/updateAdmin`, { updatedRow: updatedData });
+                            const { data } = await axios.put(`${backEndUrl}/updateAdmin`, {
+                                updatedRow: updatedData,
+                                currentAdminId: currentAdmin?._id
+                            });
                             if (data.success) {
                                 setAdmin(updatedData);
                                 setFormData(updatedData);
@@ -215,7 +223,13 @@ const AdminProfileScreen = () => {
                 </View>
 
                 <TouchableOpacity
-                    onPress={() => isEditing ? handleSave() : setIsEditing(true)}
+                    onPress={() => {
+                        if (admin.type === 'bigBoss' && currentAdmin?.type !== 'bigBoss') {
+                            setStatusBanner(true, "Security: Access restricted. Master profiles can only be edited by other Master Admins.", "error");
+                            return;
+                        }
+                        isEditing ? handleSave() : setIsEditing(true);
+                    }}
                     className={`w-10 h-10 rounded-full items-center justify-center ${isEditing ? 'bg-black' : 'bg-gray-100'}`}
                 >
                     <MaterialCommunityIcons
@@ -224,6 +238,7 @@ const AdminProfileScreen = () => {
                         color={isEditing ? "white" : "black"}
                     />
                 </TouchableOpacity>
+
             </View>
 
             {/* التعديل هنا: إضافة Offset لمنع تداخل الحقول مع الكيبورد */}
@@ -240,8 +255,8 @@ const AdminProfileScreen = () => {
 
                     {!isEditing ?
                         (
-                            <View className="flex-row items-center mb-8 bg-white p-4 rounded-[30px] border border-gray-100 shadow-sm">
-                                <View className={`w-14 h-14 rounded-2xl items-center justify-center ${admin.isVerified && admin.accesses?.length > 0 ? 'bg-black' : 'bg-gray-100'}`}>
+                            <View className="flex-row items-center mb-8 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                <View className={`w-14 h-14 rounded-xl items-center justify-center ${admin.isVerified && admin.accesses?.length > 0 ? 'bg-black' : 'bg-gray-100'}`}>
                                     <MaterialCommunityIcons
                                         name={admin.isVerified && admin.accesses?.length > 0 ? "shield-check" : "shield-off"}
                                         size={30}
@@ -264,10 +279,10 @@ const AdminProfileScreen = () => {
                             </View>
                         )
                         :
-                        <View className="bg-white rounded-[35px] p-6 border border-gray-100 shadow-sm mb-6 flex-row items-center justify-between">
+                        <View className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm mb-6 flex-row items-center justify-between">
                             <View className="flex-row items-center">
                                 <View
-                                    className="w-10 h-10 rounded-2xl items-center justify-center"
+                                    className="w-10 h-10 rounded-xl items-center justify-center"
                                     style={{ backgroundColor: formData.isVerified ? '#ecfdf5' : '#fff7ed' }}
                                 >
                                     <MaterialCommunityIcons
@@ -294,7 +309,7 @@ const AdminProfileScreen = () => {
                         </View>
                     }
 
-                    <View className="bg-white rounded-[35px] p-6 border border-gray-100 shadow-sm mb-6">
+                    <View className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm mb-6">
                         <Text className="text-[11px] font-black text-black/20 uppercase tracking-[2px] mb-6">Personal Details</Text>
 
                         {[
@@ -345,7 +360,7 @@ const AdminProfileScreen = () => {
                         })}
                     </View>
 
-                    <View className="bg-white rounded-[35px] p-6 border border-gray-100 shadow-sm mb-6">
+                    <View className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm mb-6">
                         <Text className="text-[11px] font-black text-black/20 uppercase tracking-[2px] mb-6">Security & Notes</Text>
 
                         <View className="mb-6-">
@@ -373,7 +388,7 @@ const AdminProfileScreen = () => {
                         </View>
                     </View>
 
-                    <View className="bg-white rounded-[35px] p-6 border border-gray-100 shadow-sm">
+                    <View className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
                         <Text className="text-[11px] font-black text-black/20 uppercase tracking-[2px] mb-6">Access</Text>
                         <View className="flex-row flex-wrap gap-2">
                             {accessesDispo.map((item, index) => {
@@ -387,7 +402,7 @@ const AdminProfileScreen = () => {
                                         key={index}
                                         disabled={!isEditing}
                                         onPress={() => toggleAccess(item as any)}
-                                        className={`px-4 py-2.5 rounded-2xl border ${isSelected ? 'bg-black border-black' : 'bg-gray-50 border-gray-100'}`}
+                                        className={`px-4 py-2.5 rounded-xl border ${isSelected ? 'bg-black border-black' : 'bg-gray-50 border-gray-100'}`}
                                     >
                                         <Text className={`text-[10px] font-black uppercase ${isSelected ? 'text-white' : 'text-black/40'}`}>{item}</Text>
                                     </TouchableOpacity>
@@ -410,7 +425,7 @@ const AdminProfileScreen = () => {
                             {/* <TouchableOpacity
                                 onPress={handleDismiss}
                                 disabled={loading}
-                                className={`flex-row items-center justify-center p-4 rounded-3xl border ${(admin.accesses?.length || 0) === 0 ? 'border-emerald-100 bg-emerald-50' : 'border-amber-100 bg-amber-50'}`}
+                                className={`flex-row items-center justify-center p-4 rounded-xl border ${(admin.accesses?.length || 0) === 0 ? 'border-emerald-100 bg-emerald-50' : 'border-amber-100 bg-amber-50'}`}
                             >
                                 <MaterialCommunityIcons
                                     name={(admin.accesses?.length || 0) === 0 ? "account-check-outline" : "account-off"}
@@ -425,7 +440,7 @@ const AdminProfileScreen = () => {
                             <TouchableOpacity
                                 onPress={handleDelete}
                                 disabled={loading}
-                                className="flex-row items-center justify-center p-4 rounded-3xl border border-red-100 bg-red-50"
+                                className="flex-row items-center justify-center p-4 rounded-xl border border-red-100 bg-red-50"
                             >
                                 <MaterialCommunityIcons name="trash-can" size={18} color="#dc2626" />
                                 <Text className="ml-2 text-red-600 font-bold text-[10px] uppercase tracking-[2px]">Delete This Admin</Text>

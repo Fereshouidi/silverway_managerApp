@@ -104,12 +104,12 @@ const AdminsList = () => {
         pathname: "/screens/adminDetails/[id]",
         params: { id: item._id }
       })}
-      className="flex-row items-center p-4 mx-4 my-2 rounded-2xl shadow-sm"
+      className="flex-row items-center p-4 mx-4 my-2 rounded-xl shadow-sm"
       style={{ backgroundColor: colors.light[100] }}
     >
       <View
         className="w-12 h-12 rounded-full items-center justify-center"
-        style={{ backgroundColor: colors.light[400] }}
+        style={{ backgroundColor: colors.dark[100] }}
       >
         <Image
           source={icons.realEstateAgent}

@@ -83,7 +83,7 @@ const Delivered = ({
     const renderSkeleton = () => (
         <View className="p-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <View key={i} className="w-full h-48 bg-gray-100 rounded-[35px] mb-6 animate-pulse" />
+                <View key={i} className="w-full h-48 bg-gray-100 rounded-xl mb-6 animate-pulse" />
             ))}
         </View>
     );
@@ -122,7 +122,7 @@ const Delivered = ({
                     ListFooterComponent={() => (
                         <View style={{ height: 100, justifyContent: 'center', alignItems: 'center' }}>
                             {loadingMore ? (
-                                <View className="flex-row items-center bg-white px-5 py-2.5 rounded-2xl border border-gray-100 shadow-sm">
+                                <View className="flex-row items-center bg-white px-5 py-2.5 rounded-xl border border-gray-100 shadow-sm">
                                     <ActivityIndicator size="small" color={colors.dark[100]} />
                                     <Text className="ml-3 text-[10px] font-black text-gray-400 uppercase tracking-[2px]">
                                         Loading History...

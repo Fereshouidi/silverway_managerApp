@@ -120,7 +120,8 @@ const ProductsList = ({
     const renderProduct = ({ item }: { item: any }) => {
         const isSelected = productsSelected.includes(item._id);
         const productName = item.name?.en || item.name?.fr || "Unnamed Product";
-        const totalQuantity = item.specifications?.reduce((acc: number, spec: any) => acc + (spec.quantity || 0), 0) || 0;
+        const isUnlimited = item.specifications?.some((spec: any) => spec.unlimited);
+        const totalQuantity = isUnlimited ? 0 : item.specifications?.reduce((acc: number, spec: any) => acc + (spec.quantity || 0), 0) || 0;
 
         return (
             <TouchableOpacity
@@ -128,7 +129,7 @@ const ProductsList = ({
                 onPress={() => onPressProduct(item._id)}
                 onLongPress={() => onLongPressProduct(item._id)}
                 delayLongPress={500}
-                className="mx-5 mb-2 rounded-[28px] flex-row items-center p-3"
+                className="mx-5 mb-1 rounded-[10px] flex-row items-center p-3"
                 style={{
                     backgroundColor: isSelected ? colors.dark[150] : colors.light[100],
                     borderWidth: 1,
@@ -182,7 +183,7 @@ const ProductsList = ({
                             className="text-[11px] font-medium"
                             style={{ color: isSelected ? colors.light[400] : colors.dark[100], opacity: 0.6 }}
                         >
-                            {totalQuantity} Units
+                            {isUnlimited ? "Unlimited" : `${totalQuantity} Units`}
                         </Text>
                     </View>
                 </View>
@@ -236,12 +237,18 @@ const ProductsList = ({
                             <View className='flex-row justify-between items-center gap-3'>
                                 <Text className="text-3xl font-black text-black">Inventory</Text>
                                 {setHiddenModalActive && (
-                                    <TouchableOpacity 
+                                    <TouchableOpacity
                                         onPress={() => setHiddenModalActive(true)}
-                                        className="bg-gray-100 p-2 rounded-xl flex flex-row justify-center items-center gap-2"
+                                        activeOpacity={0.8}
+                                        className="bg-white px-4 py-2 rounded-xl flex-row items-center border border-gray-100"
+                                        style={{
+                                            boxShadow: `0 3px 10px ${colors.dark[950]}`,
+                                        }}
                                     >
-                                        <EyeOff size={18} color={colors.dark[100]} />
-                                        <Text className='text-[10px] font-bold uppercase tracking-[3px]'>hidden</Text>
+                                        <EyeOff size={14} color={colors.dark[100]} />
+                                        <Text className='text-[10px] font-black uppercase tracking-[2px] ml-2 text-black'>
+                                            Hidden
+                                        </Text>
                                     </TouchableOpacity>
                                 )}
                             </View>

@@ -77,18 +77,24 @@ const ClientsList = () => {
         pathname: "/screens/clientDetails/[id]",
         params: { id: item._id }
       })}
-      className="flex-row items-center p-4 mx-4 my-2 rounded-2xl shadow-sm"
+      className="flex-row items-center p-4 mx-4 my-2 rounded-xl shadow-sm"
       style={{ backgroundColor: colors.light[100] }}
     >
       <View
         className="w-12 h-12 rounded-full items-center justify-center"
-        style={{ backgroundColor: colors.light[400] }}
+        style={{ backgroundColor: colors.dark[100] }}
       >
-        <Image
-          source={icons.userWhite}
-          style={{ width: 22, height: 22 }}
-          tintColor={colors.light[100]}
-        />
+        {item.fullName ? (
+          <Text className="text-xl font-bold text-white uppercase" style={{ color: colors.light[100] }}>
+            {item.fullName.charAt(0)}
+          </Text>
+        ) : (
+          <Image
+            source={icons.userWhite}
+            style={{ width: 22, height: 22 }}
+            tintColor={colors.light[100]}
+          />
+        )}
       </View>
 
       <View className="flex-1 ml-4">

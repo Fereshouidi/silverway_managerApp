@@ -13,17 +13,17 @@ const SidebarCollectionsEditor = () => {
     const selectedIds = ownerInfo?.collectionsInSideBar || [];
 
     return (
-        <TouchableOpacity 
+        <TouchableOpacity
             onPress={() => router.push({
                 pathname: '/screens/collectionsManagement',
-                params: { 
+                params: {
                     type: 'collectionsInSideBar',
                     title: 'Sidebar Menu',
-                    currentSelected: selectedIds.join(',') 
+                    currentSelected: selectedIds.join(',')
                 }
             })}
             activeOpacity={0.7}
-            className="w-full px-5 py-6 rounded-3xl mt-5" 
+            className="w-full px-5 py-6 rounded-xl mt-5"
             style={{ backgroundColor: colors.light[200] }}
         >
             <View className="flex-row justify-between items-center">
@@ -37,8 +37,8 @@ const SidebarCollectionsEditor = () => {
                 </View>
 
                 <View className="flex-row items-center">
-                    <View 
-                        className="px-4 py-2 rounded-2xl mr-2" 
+                    <View
+                        className="px-4 py-2 rounded-xl mr-2"
                         style={{ backgroundColor: colors.dark[100] }}
                     >
                         <Text className="font-bold text-xs" style={{ color: colors.light[100] }}>

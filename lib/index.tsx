@@ -12,6 +12,34 @@ import { Linking, Platform, ScrollView, Text, View } from 'react-native';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
+import * as FileSystem from 'expo-file-system/legacy';
+
+export const removeBackground = async (imageUri: string): Promise<string | null> => {
+  try {
+    const formData = new FormData();
+    formData.append('image', {
+      uri: imageUri,
+      type: 'image/jpeg',
+      name: 'image.jpg',
+    } as any);
+
+    const { data } = await axios.post(`${backEndUrl}/removeBackground`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000, // 2 min timeout for processing
+    });
+
+    if (data.success && data.url) {
+      // Download the processed image locally for the editor to use
+      const localUri = FileSystem.cacheDirectory + `bg_removed_${Date.now()}.png`;
+      const download = await FileSystem.downloadAsync(data.url, localUri);
+      return download.uri;
+    }
+    return null;
+  } catch (error: any) {
+    console.error('[RemoveBG Client]', error.message);
+    return null;
+  }
+};
 
 export function timeAgo(date: string | number | Date): string {
   const now = new Date();
@@ -42,10 +70,14 @@ export function timeAgo(date: string | number | Date): string {
 export const calcTotalPrice = (order: OrderType) => {
   let totalPrice = 0;
 
-  order.purchases.map((purchase) => {
-    if (!purchase?.specification || !purchase?.quantity) return;
-    //@ts-ignore
-    totalPrice = totalPrice + (purchase?.specification?.price * purchase?.quantity);
+  order.purchases.forEach((purchase) => {
+    const basePrice = (purchase.specification as any)?.price || (purchase as any).specPrice || 0;
+    const charmsPrice = purchase.customizedCharms?.reduce((acc, pc) => {
+      const p = (pc.spec as any)?.price || (pc.charm as any)?.price || (pc.charm as any)?.specifications?.[0]?.price || 0;
+      return acc + p;
+    }, 0) || 0;
+    const qty = purchase.quantity || 0;
+    totalPrice += ((basePrice + charmsPrice) * qty);
   })
 
   return Number(totalPrice.toFixed(2))
@@ -207,7 +239,7 @@ export const renderMessageContent = (content: string, isAI: boolean) => {
                 nestedScrollEnabled={true}
               >
                 <View
-                  className={`border rounded-xl overflow-hidden ${isAI ? 'border-gray-100 bg-white' : 'border-white/10 bg-white/5'}`}
+                  className={`border rounded-sm overflow-hidden ${isAI ? 'border-gray-100 bg-white' : 'border-white/10 bg-white/5'}`}
                   style={{ alignSelf: 'flex-start' }}
                 >
                   {lines.map((line, lIdx) => {
@@ -221,13 +253,13 @@ export const renderMessageContent = (content: string, isAI: boolean) => {
                       <View
                         key={lIdx}
                         className={`flex-row border-b ${isAI ? 'border-gray-100' : 'border-white/5'} ${isHeader ? (isAI ? 'bg-gray-50' : 'bg-white/10') : ''}`}
-                        style={{ minHeight: 40 }}
+                        style={{ minHeight: 30 }}
                       >
                         {cells.map((cell, cIdx) => (
                           <View
                             key={cIdx}
                             style={{ minWidth: 100, maxWidth: 200 }}
-                            className={`p-3 border-r ${isAI ? 'border-gray-50' : 'border-white/5'} last:border-r-0 justify-center`}
+                            className={`p-2 border-r ${isAI ? 'border-gray-50' : 'border-white/5'} last:border-r-0 justify-center`}
                           >
                             <Text className={`text-[11px] ${isHeader ? 'font-black' : 'font-medium'} ${isAI ? 'text-black' : 'text-white'}`}>
                               {cell.trim()}

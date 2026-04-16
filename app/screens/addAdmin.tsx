@@ -100,7 +100,7 @@ const AddAdmin = () => {
                         contentContainerStyle={{ padding: 20 }}
                     >
                         {/* Identity & Security */}
-                        <View className="bg-white rounded-[35px] p-6 border border-gray-100 shadow-sm mb-6">
+                        <View className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm mb-6">
                             <Text className="text-[11px] font-black text-black/20 uppercase tracking-[2px] mb-6">Login Info</Text>
 
                             {/* Full Name - Unique in Schema */}
@@ -141,7 +141,7 @@ const AddAdmin = () => {
                         </View>
 
                         {/* Permissions Matrix */}
-                        <View className="bg-white rounded-[35px] p-6 border border-gray-100 shadow-sm mb-10">
+                        <View className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm mb-10">
                             <Text className="text-[11px] font-black text-black/20 uppercase tracking-[2px] mb-6">Assign Access Privileges</Text>
                             <View className="flex-row flex-wrap gap-2">
                                 {accessesDispo.map((item, index) => {
@@ -150,7 +150,7 @@ const AddAdmin = () => {
                                         <TouchableOpacity
                                             key={index}
                                             onPress={() => toggleAccess(item as AdminAccess)}
-                                            className={`px-4 py-2.5 rounded-2xl border ${isSelected ? 'bg-black border-black' : 'bg-gray-50 border-gray-100'}`}
+                                            className={`px-4 py-2.5 rounded-xl border ${isSelected ? 'bg-black border-black' : 'bg-gray-50 border-gray-100'}`}
                                         >
                                             <Text className={`text-[10px] font-black uppercase ${isSelected ? 'text-white' : 'text-black/40'}`}>{item}</Text>
                                         </TouchableOpacity>
@@ -163,7 +163,7 @@ const AddAdmin = () => {
                         <TouchableOpacity
                             onPress={handleCreate}
                             disabled={loading}
-                            className="bg-black py-5 rounded-[25px] items-center mb-10 shadow-lg"
+                            className="bg-black py-5 rounded-xl items-center mb-10 shadow-lg"
                         >
                             {loading ? (
                                 <ActivityIndicator color="white" />

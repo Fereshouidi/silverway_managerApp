@@ -114,7 +114,7 @@ export default function AdminLogin() {
           <View className="gap-y-6">
             <View>
               <Text className="text-[10px] font-black uppercase mb-2 ml-1 text-black/30">Identity</Text>
-              <View className="flex-row items-center bg-gray-50 rounded-3xl px-5 border border-gray-100 h-16">
+              <View className="flex-row items-center bg-gray-50 rounded-xl px-5 border border-gray-100 h-16">
                 <MaterialCommunityIcons name="account-outline" size={20} color="#999" />
                 <TextInput
                   className="flex-1 ml-3 font-bold text-black"
@@ -129,7 +129,7 @@ export default function AdminLogin() {
 
             <View>
               <Text className="text-[10px] font-black uppercase mb-2 ml-1 text-black/30">Authentication</Text>
-              <View className="flex-row items-center bg-gray-50 rounded-3xl px-5 border border-gray-100 h-16">
+              <View className="flex-row items-center bg-gray-50 rounded-xl px-5 border border-gray-100 h-16">
                 <MaterialCommunityIcons name="lock-outline" size={20} color="#999" />
                 <TextInput
                   className="flex-1 ml-3 font-bold text-black"
@@ -150,7 +150,7 @@ export default function AdminLogin() {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 handleLogin();
               }}
-              className="w-full h-16 rounded-[20px] flex-row items-center justify-center px-6 shadow-xl shadow-black/30"
+              className="w-full h-16 rounded-xl flex-row items-center justify-center px-6 shadow-xl shadow-black/30"
               style={{ backgroundColor: colors.dark[100] }}
             >
               <Text className="text-white font-black uppercase tracking-[2px] text-xs">

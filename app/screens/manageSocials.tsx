@@ -168,7 +168,7 @@ const ManageSocials = () => {
                         <Text className={`ml-1 font-bold text-[10px] uppercase ${isInvalidPhone ? 'text-red-500' : 'opacity-40'}`} style={!isInvalidPhone ? { color: colors.dark[100] } : {}}>
                             Official Phone {isInvalidPhone && "(Must be 8 digits)"}
                         </Text>
-                        <View className={`flex-row items-center px-4 h-16 rounded-[20px] border ${isInvalidPhone ? 'border-red-500' : 'border-transparent'}`} style={{ backgroundColor: colors.light[200] }}>
+                        <View className={`flex-row items-center px-4 h-16 rounded-xl border ${isInvalidPhone ? 'border-red-500' : 'border-transparent'}`} style={{ backgroundColor: colors.light[200] }}>
                             <MaterialCommunityIcons name="phone-outline" size={20} color={isInvalidPhone ? "#ef4444" : colors.dark[100]} style={{ opacity: isInvalidPhone ? 1 : 0.5 }} />
                             <TextInput
                                 className="flex-1 ml-3 font-semibold text-sm h-full"
@@ -189,7 +189,7 @@ const ManageSocials = () => {
                         <Text className={`ml-1 font-bold text-[10px] uppercase ${isInvalidEmail ? 'text-red-500' : 'opacity-40'}`} style={!isInvalidEmail ? { color: colors.dark[100] } : {}}>
                             Business Email {isInvalidEmail && "(Invalid format)"}
                         </Text>
-                        <View className={`flex-row items-center px-4 h-16 rounded-[20px] border ${isInvalidEmail ? 'border-red-500' : 'border-transparent'}`} style={{ backgroundColor: colors.light[200] }}>
+                        <View className={`flex-row items-center px-4 h-16 rounded-xl border ${isInvalidEmail ? 'border-red-500' : 'border-transparent'}`} style={{ backgroundColor: colors.light[200] }}>
                             <MaterialCommunityIcons name="email-outline" size={20} color={isInvalidEmail ? "#ef4444" : colors.dark[100]} style={{ opacity: isInvalidEmail ? 1 : 0.5 }} />
                             <TextInput
                                 className="flex-1 ml-3 font-semibold text-sm h-full"
@@ -207,7 +207,7 @@ const ManageSocials = () => {
                     {/* Mail App Password */}
                     <View className="gap-y-2">
                         <Text className="ml-1 font-bold text-[10px] uppercase opacity-40" style={{ color: colors.dark[100] }}>Mail App Password</Text>
-                        <View className="flex-row items-center px-4 h-16 rounded-[20px]" style={{ backgroundColor: colors.light[200] }}>
+                        <View className="flex-row items-center px-4 h-16 rounded-xl" style={{ backgroundColor: colors.light[200] }}>
                             <MaterialCommunityIcons name="key-outline" size={20} color={colors.dark[100]} style={{ opacity: 0.5 }} />
                             <TextInput
                                 className="flex-1 ml-3 font-semibold text-sm h-full"
@@ -228,7 +228,7 @@ const ManageSocials = () => {
                             </TouchableOpacity>
                         </View>
 
-                        <View className="mt-2 p-4 rounded-2xl bg-blue-50/50 border border-blue-100">
+                        <View className="mt-2 p-4 rounded-xl bg-blue-50/50 border border-blue-100">
                             <View className="flex-row items-center mb-1">
                                 <MaterialCommunityIcons name="lock-check-outline" size={14} color="#3b82f6" />
                                 <Text className="ml-1 text-[11px] font-bold text-blue-500 uppercase">What is this?</Text>
@@ -248,7 +248,7 @@ const ManageSocials = () => {
                             <View key={item.name} className="gap-y-2">
                                 <Text className="ml-1 font-bold text-[10px] uppercase opacity-40" style={{ color: colors.dark[100] }}>{item.name} Profile Link</Text>
                                 <View
-                                    className="flex-row items-center px-4 h-16 rounded-[20px] border-2"
+                                    className="flex-row items-center px-4 h-16 rounded-xl border-2"
                                     style={{
                                         backgroundColor: colors.light[200],
                                         borderColor: platform === item.name ? colors.dark[100] : 'transparent'

@@ -15,12 +15,12 @@ const SocialMediaSection = () => {
     ];
 
     return (
-        <View className="px-5 mt-6 rounded-3xl p-5" style={{backgroundColor: colors.light[200]}}>
+        <View className="px-5 mt-6 rounded-xl p-5" style={{ backgroundColor: colors.light[200] }}>
             <View className="flex-row justify-between items-center mb-4">
                 <Text className="text-lg font-bold" style={{ color: colors.dark[100] }}>
                     Social Media
                 </Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                     onPress={() => router.push('/screens/manageSocials')}
                     className="px-3 py-1 rounded-full"
                     style={{ backgroundColor: colors.light[200] }}
@@ -38,13 +38,13 @@ const SocialMediaSection = () => {
                             params: { platform: platform.name }
                         })}
                         activeOpacity={0.7}
-                        className="flex-row items-center p-4 rounded-2xl"
-                        style={{ 
-                            width: '48%', 
-                            backgroundColor: colors.light[100] 
+                        className="flex-row items-center p-4 rounded-xl"
+                        style={{
+                            width: '48%',
+                            backgroundColor: colors.light[100]
                         }}
                     >
-                        <View 
+                        <View
                             className="w-10 h-10 rounded-full items-center justify-center mr-3"
                             style={{ backgroundColor: colors.light[100] }}
                         >

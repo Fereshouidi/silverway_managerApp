@@ -82,7 +82,7 @@ const Pending = ({
     const renderSkeleton = () => (
         <View className="p-4 space-y-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <View key={i} className="w-full h-40 bg-gray-100 rounded-[35px] animate-pulse mb-4" />
+                <View key={i} className="w-full h-40 bg-gray-100 rounded-xl animate-pulse mb-4" />
             ))}
         </View>
     );

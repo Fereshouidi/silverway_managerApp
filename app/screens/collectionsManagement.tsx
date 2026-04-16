@@ -68,7 +68,7 @@ const CollectionsManagement = () => {
                     placeholderTextColor="#A3A3A3"
                     value={search}
                     onChangeText={setSearch}
-                    className="p-4 rounded-2xl"
+                    className="p-4 rounded-xl"
                     style={{ backgroundColor: colors.light[200], color: colors.dark[100] }}
                 />
             </View>
@@ -127,7 +127,7 @@ const CollectionsManagement = () => {
             <View className="px-6 py-4">
                 <TouchableOpacity
                     onPress={() => router.back()}
-                    className="w-full py-4 rounded-2xl items-center"
+                    className="w-full py-4 rounded-xl items-center"
                     style={{ backgroundColor: colors.dark[100] }}
                 >
                     <Text className="font-bold text-white" style={{ color: colors.light[100] }}>

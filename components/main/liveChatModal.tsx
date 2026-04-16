@@ -15,7 +15,7 @@ import Markdown from 'react-native-markdown-display';
 import { colors } from '@/constants';
 
 type Message = {
-    role: 'assistant' | 'user';
+    role: 'assistant' | 'user' | 'tool' | 'system';
     content: string;
 };
 
@@ -33,15 +33,18 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const LiveChatModal = ({ showTranscript, setShowTranscript, chatHistory }: Props) => {
     const memoizedMessages = useMemo(() => {
-        const messages = chatHistory[0]?.messages || [];
-        return [...messages].reverse().map(msg => {
-            let content = msg.content;
-            // Replace <br> tags with newlines
-            content = content.replace(/<br\s*\/?>/gi, '\n');
-            // Replace pipe used as line break before list items: "| -" → newline + "-"
-            content = content.replace(/\s*\|\s*(?=-\s)/g, '\n');
-            return { ...msg, displayContent: content };
-        });
+        const messages = (chatHistory[0]?.messages || []) as any[];
+        return [...messages]
+            .filter((msg) => msg.content && (msg.role == "user" || msg.role == "assistant"))
+            .reverse()
+            .map(msg => {
+                let content = msg.content;
+                // Replace <br> tags with newlines
+                content = content.replace(/<br\s*\/?>/gi, '\n');
+                // Replace pipe used as line break before list items: "| -" → newline + "-"
+                content = content.replace(/\s*\|\s*(?=-\s)/g, '\n');
+                return { ...msg, displayContent: content };
+            });
     }, [chatHistory]);
 
     const maxBubbleWidth = SCREEN_WIDTH - 80;
@@ -77,7 +80,7 @@ const LiveChatModal = ({ showTranscript, setShowTranscript, chatHistory }: Props
                             </View>
                             <TouchableOpacity
                                 onPress={() => setShowTranscript(false)}
-                                className="w-12 h-12 rounded-2xl items-center justify-center border border-gray-100 bg-gray-50"
+                                className="w-12 h-12 rounded-xl items-center justify-center border border-gray-100 bg-gray-50"
                             >
                                 <MaterialCommunityIcons name="close" size={20} color={colors.dark[100]} />
                             </TouchableOpacity>
@@ -95,13 +98,13 @@ const LiveChatModal = ({ showTranscript, setShowTranscript, chatHistory }: Props
                                     const isAssistant = msg.role === 'assistant';
 
                                     return (
-                                        <View className={`mb-6 ${isAssistant ? 'self-start mr-10' : 'self-end ml-10'}`}>
+                                        <View className={` mb-6 ${isAssistant ? 'self-start mr-10 w-full' : 'self-end ml-10'}`}>
                                             <View
-                                                className={`px-5 py-4 rounded-[26px] border ${isAssistant ? 'rounded-tl-none shadow-sm' : 'rounded-tr-none'
+                                                className={`px-5 py-2 rounded-[20px] border ${isAssistant ? 'rounded-tl-none shadow-sm-' : 'rounded-tr-none'
                                                     }`}
                                                 style={{
                                                     backgroundColor: isAssistant ? colors.light[100] : colors.dark[100],
-                                                    borderColor: isAssistant ? colors.light[200] : colors.dark[200],
+                                                    borderColor: isAssistant ? colors.light[100] : colors.dark[200],
                                                 }}
                                             >
                                                 <Markdown
