@@ -1,287 +1,837 @@
-"use client";
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { 
-    View, 
-    Text, 
-    Image, 
-    ScrollView, 
-    TouchableOpacity, 
-    ActivityIndicator, 
-    Animated,
-    Dimensions,
-    Platform,
-    Linking
-} from 'react-native';
-import { useLocalSearchParams, router, Stack } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
-import axios from 'axios';
 import { backEndUrl } from '@/api';
+import LiveChatModal from '@/components/main/liveChatModal';
 import { colors } from '@/constants';
 import { useStatusBanner } from '@/contexts/StatusBanner';
-import { timeAgo } from '@/lib';
-
-const { width } = Dimensions.get('window');
+import { calcTotalPrice, handleCall, handleWhatsApp, isValidEmail, isValidPhone } from '@/lib';
+import { ProductType, OrderType, DeliveryWorkerType } from '@/types';
+import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
+import OrderDetailsModal from '@/app/screens/orderDetailsModal';
+import axios from 'axios';
+import * as Haptics from 'expo-haptics';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  FlatList,
+} from 'react-native';
+import Markdown, { ASTNode } from 'react-native-markdown-display';
 
 const ClientDetails = () => {
-    const { id } = useLocalSearchParams();
-    const { setStatusBanner } = useStatusBanner();
-    const [client, setClient] = useState<any>(null);
-    const [orders, setOrders] = useState<any[]>([]);
-    const [likes, setLikes] = useState<any[]>([]);
-    const [cartItems, setCartItems] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    
-    // Animation states
-    const scrollY = useRef(new Animated.Value(0)).current;
-    
-    const fetchClientData = useCallback(async () => {
-        try {
-            setLoading(true);
-            const res = await axios.get(`${backEndUrl}/getClientInfoById?id=${id}`);
-            
-            if (res.data.success) {
-                setClient(res.data.client);
-                setOrders(res.data.orders || []);
-                setLikes(res.data.likes || []);
-                setCartItems(res.data.purchasesInCart || []);
-            }
-        } catch (error) {
-            console.error("Fetch Client Error:", error);
-            setStatusBanner(true, "Failed to load client record", "error");
-        } finally {
-            setLoading(false);
+  const { id } = useLocalSearchParams();
+  const router = useRouter();
+  const { setStatusBanner } = useStatusBanner();
+
+  // UI States
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
+  const [showSummary, setShowSummary] = useState(false);
+  const [showTranscript, setShowTranscript] = useState(false);
+  const [showCartModal, setShowCartModal] = useState(false);
+  const [showLikesModal, setShowLikesModal] = useState(false);
+  const [showOrdersModal, setShowOrdersModal] = useState(false);
+  const [fetchingChat, setFetchingChat] = useState(false);
+
+  // Data States
+  const [client, setClient] = useState<any>(null);
+  const [formData, setFormData] = useState<any>(null);
+  const [cartItems, setCartItems] = useState<any[]>([]);
+  const [ordersHistory, setOrdersHistory] = useState<any[]>([]);
+  const [likedProducts, setLikedProducts] = useState<ProductType[]>([]);
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
+  const [visibleMessagesCount, setVisibleMessagesCount] = useState(5);
+
+  const [selectedOrder, setSelectedOrder] = useState<OrderType | null>(null);
+  const [isOrderModalVisible, setIsOrderModalVisible] = useState(false);
+  const [deliveryWorker, setDeliveryWorker] = useState<DeliveryWorkerType | undefined>(undefined);
+
+  useEffect(() => {
+    const fetchAllClientData = async () => {
+      try {
+        const { data } = await axios.get(`${backEndUrl}/getClientInfoById`, {
+          params: { id: id },
+        });
+
+        if (data.success) {
+          setClient(data.client);
+          setFormData(data.client);
+
+          // Preserve full purchase objects to allow deletion by purchase ID
+          setCartItems(data.purchasesInCart || []);
+          setLikedProducts(data.likes?.map((l: any) => l.product).filter(Boolean) || []);
+          setOrdersHistory(data.orders || []);
         }
-    }, [id]);
-
-    useEffect(() => {
-        if (id) fetchClientData();
-    }, [id, fetchClientData]);
-
-    const handleCall = () => {
-        if (client?.phone) Linking.openURL(`tel:${client.phone}`);
+      } catch (error) {
+        console.error('Fetch error:', error);
+        setStatusBanner(true, 'Could not retrieve client intelligence.', 'error');
+      } finally {
+        setFetching(false);
+      }
     };
 
-    const handleWhatsApp = () => {
-        if (client?.phone) {
-            const cleanPhone = client.phone.replace(/\D/g, '');
-            Linking.openURL(`https://wa.me/${cleanPhone}`);
+    if (id) fetchAllClientData();
+  }, [id]);
+
+  useEffect(() => {
+    const fetchWorker = async () => {
+      try {
+        const { data } = await axios.get(`${backEndUrl}/getDeliveryWorker`);
+        setDeliveryWorker(data.deliveryWorker);
+      } catch (err) {
+        console.log("Worker Fetch Err:", err);
+      }
+    };
+    fetchWorker();
+  }, []);
+
+  useEffect(() => {
+    const fetchChatHistory = async () => {
+      if (!id) return;
+
+      try {
+        setFetchingChat(true);
+        const { data } = await axios.post(`${backEndUrl}/getChatHistory`, {
+          clientId: id,
+          limit: 100, // Fetch a good chunk for the manager
+          skip: 0
+        });
+
+        // The endpoint now returns the full chat object
+        if (data && typeof data === 'object') {
+          // Wrap in array for backward compatibility with component expectations
+          setChatHistory([data]);
+
+          // If the chat has a summary, we can also update the client's summary field 
+          // to ensure both UI locations are in sync
+          if (data.summary) {
+            setClient((prev: any) => ({
+              ...prev,
+              summary: data.summary
+            }));
+          }
         }
+      } catch (error) {
+        console.error('Chat fetch error:', error);
+      } finally {
+        setFetchingChat(false);
+      }
     };
 
-    const headerOpacity = scrollY.interpolate({
-        inputRange: [50, 100],
-        outputRange: [0, 1],
-        extrapolate: 'clamp',
-    });
+    if (id) fetchChatHistory();
+  }, [id]);
 
-    const headerTranslateY = scrollY.interpolate({
-        inputRange: [50, 100],
-        outputRange: [10, 0],
-        extrapolate: 'clamp',
-    });
+  const handleDeletePurchase = async (purchaseId: string) => {
+    try {
+      // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const { data } = await axios.delete(`${backEndUrl}/deletePurchase`, {
+        params: { id: purchaseId },
+      });
 
-    if (loading) {
-        return (
-            <View className="flex-1 justify-center items-center bg-white">
-                <ActivityIndicator size="large" color={colors.dark[100]} />
-                <Text className="mt-4 font-black text-[10px] uppercase tracking-[3px] opacity-20">Accessing Records</Text>
-            </View>
-        );
+      if (data.success) {
+        setCartItems((prev) => prev.filter((item) => item._id !== purchaseId));
+        setStatusBanner(true, 'Item removed from client cart.', 'success');
+      }
+    } catch (error) {
+      setStatusBanner(true, 'Failed to remove item.', 'error');
     }
+  };
 
-    if (!client) {
-        return (
-            <SafeAreaView className="flex-1 bg-white justify-center items-center">
-                <MaterialCommunityIcons name="account-off-outline" size={80} color="#E5E7EB" />
-                <Text className="mt-6 text-xl font-black uppercase text-gray-300">Client Not Found</Text>
-                <TouchableOpacity onPress={() => router.back()} className="mt-8 px-8 py-4 bg-black rounded-xl">
-                    <Text className="text-white font-bold uppercase text-xs">Go Back</Text>
-                </TouchableOpacity>
-            </SafeAreaView>
-        );
-    }
+  const renderProductList = (items: any[], emptyMessage: string, isCart: boolean = false) => (
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+      {items.length > 0 ? (
+        items.map((entry, idx) => {
+          const item = isCart ? entry.product : entry;
+          const purchaseId = isCart ? entry._id : null;
 
-    return (
-        <View className="flex-1 bg-white">
-            <Stack.Screen options={{ headerShown: false }} />
-            
-            {/* Animated Slim Header */}
-            <SafeAreaView 
-                edges={['top']} 
-                className="absolute top-0 left-0 right-0 z-50 bg-white/95 border-b border-gray-100 shadow-sm"
-                style={{
-                  height: Platform.OS === 'ios' ? 100 : 70,
-                }}
+          if (!item) return null;
+
+          const productImage =
+            item.thumbNail || (item.images && item.images.length > 0 ? item.images[0].uri : null);
+
+          return (
+            <TouchableOpacity
+              key={idx.toString()}
+              activeOpacity={0.8}
+              onPress={() => {
+                setShowCartModal(false);
+                setShowLikesModal(false);
+                router.push({
+                  pathname: '/screens/productDetails/[id]',
+                  params: { id: item._id }
+                });
+              }}
+              className="flex-row items-center mb-5 bg-white p-5 rounded-xl border border-gray-100 shadow-sm"
             >
-                <View className="flex-row items-center px-4 h-full">
-                    <TouchableOpacity onPress={() => router.back()} className="p-2 mr-2">
-                        <Feather name="arrow-left" size={24} color="black" />
-                    </TouchableOpacity>
-                    
-                    <Animated.View 
-                        className="flex-1"
-                        style={{ 
-                            opacity: headerOpacity,
-                            transform: [{ translateY: headerTranslateY }]
-                        }}
-                    >
-                        <Text className="text-sm font-black uppercase tracking-tighter" numberOfLines={1}>
-                            {client.name || 'Client Details'}
-                        </Text>
-                        <Text className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">
-                            {client.email || 'Retail Partner'}
-                        </Text>
-                    </Animated.View>
-                    
-                    <View className="flex-row items-center gap-x-2">
-                        <TouchableOpacity onPress={handleCall} className="w-10 h-10 items-center justify-center bg-gray-50 rounded-full border border-gray-100">
-                            <Feather name="phone" size={16} color="black" />
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={handleWhatsApp} className="w-10 h-10 items-center justify-center bg-emerald-50 rounded-full border border-emerald-100">
-                            <MaterialCommunityIcons name="whatsapp" size={18} color="#059669" />
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </SafeAreaView>
-
-            <Animated.ScrollView
-                className="flex-1"
-                showsVerticalScrollIndicator={false}
-                onScroll={Animated.event(
-                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                    { useNativeDriver: true }
+              {/* Image Container */}
+              <View className="w-16 h-16 bg-gray-50 rounded-xl items-center justify-center mr-5 shadow-inner overflow-hidden border border-gray-100/50">
+                {productImage ? (
+                  <Image
+                    source={{ uri: productImage }}
+                    className="w-full h-full"
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <MaterialCommunityIcons
+                    name="package-variant"
+                    size={28}
+                    color={colors.dark[100]}
+                    style={{ opacity: 0.1 }}
+                  />
                 )}
-                scrollEventThrottle={16}
-                contentContainerStyle={{ 
-                    paddingTop: Platform.OS === 'ios' ? 120 : 90,
-                    paddingBottom: 50
-                }}
-            >
-                {/* Profile Hero Section */}
-                <View className="px-6 mb-10 items-center">
-                    <View className="relative">
-                        <View className="w-32 h-32 rounded-full border-[6px] border-white shadow-2xl shadow-black/20 overflow-hidden bg-gray-100">
-                            <Image 
-                                source={{ uri: `https://ui-avatars.com/api/?name=${client.name}&background=random&size=200` }} 
-                                className="w-full h-full"
-                            />
-                        </View>
-                        <View className="absolute bottom-0 right-0 bg-emerald-500 w-8 h-8 rounded-full border-4 border-white items-center justify-center">
-                            <View className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                        </View>
-                    </View>
-                    
-                    <Text className="mt-6 text-2xl font-black text-center text-gray-900 tracking-tighter uppercase">
-                        {client.name}
+              </View>
+
+              {/* Info Section */}
+              <View className="flex-1 justify-center">
+                <Text className="text-[13px] font-black text-black mb-1" numberOfLines={1}>
+                  {typeof item.name === 'object'
+                    ? (item.name?.en || item.name?.fr || 'Unknown Product')
+                    : (item.name || 'Unknown Product')}
+                </Text>
+                {isCart && entry.specification ? (
+                  <View className="flex-row items-center bg-emerald-50 self-start px-2 py-0.5 rounded-full border border-emerald-100/50">
+                    <Text className="text-[8px] text-emerald-700 font-black uppercase tracking-tighter">
+                      {entry.specification.color || 'STNDRD'} / {entry.specification.size || 'UNISZ'} × {entry.quantity || 1}
                     </Text>
-                    <Text className="mt-1 text-gray-400 text-sm font-medium">
-                        {client.email}
-                    </Text>
-                    
-                    <View className="mt-6 flex-row items-center bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
-                        <MaterialCommunityIcons name="map-marker-outline" size={14} color="#9CA3AF" />
-                        <Text className="ml-2 text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                            Based in {client.address || 'Unknown Region'}
-                        </Text>
-                    </View>
-                </View>
+                  </View>
+                ) : (
+                  <Text className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                    Official Item
+                  </Text>
+                )}
+              </View>
 
-                {/* Engagement Stats */}
-                <View className="px-6 mb-10">
-                    <View className="flex-row justify-between gap-x-4">
-                        <View className="flex-1 bg-blue-50/30 p-5 rounded-2xl border border-blue-100/30">
-                            <View className="w-10 h-10 bg-blue-500 rounded-xl items-center justify-center mb-3 shadow-lg shadow-blue-200">
-                                <Feather name="shopping-bag" size={18} color="white" />
-                            </View>
-                            <Text className="text-[9px] font-black text-blue-900/50 uppercase mb-1">Total orders</Text>
-                            <Text className="text-xl font-black text-blue-950">{orders.length}</Text>
-                        </View>
-                        
-                        <View className="flex-1 bg-emerald-50/30 p-5 rounded-2xl border border-emerald-100/30">
-                            <View className="w-10 h-10 bg-emerald-500 rounded-xl items-center justify-center mb-3 shadow-lg shadow-emerald-200">
-                                <MaterialCommunityIcons name="currency-usd" size={20} color="white" />
-                            </View>
-                            <Text className="text-[9px] font-black text-emerald-900/50 uppercase mb-1">Lifetime value</Text>
-                            <Text className="text-xl font-black text-emerald-950">
-                                {orders.reduce((acc, o) => acc + (o.totalPrice || 0), 0).toFixed(2)} DT
-                            </Text>
-                        </View>
-                    </View>
-                </View>
+              {/* Price & Actions */}
+              <View className="items-end ml-4">
+                <Text className="text-sm font-black text-black mb-1.5">
+                  {item.price ?? 0} DT
+                </Text>
 
-                {/* Engagement Info Grid */}
-                <View className="px-6 mb-10">
-                    <View className="flex-row flex-wrap justify-between gap-y-4">
-                        <View className="w-[48%] bg-rose-50/30 p-5 rounded-2xl border border-rose-100/30 shadow-sm">
-                            <Text className="text-[8px] font-black text-rose-900/40 uppercase tracking-widest mb-3">Wishlist Items</Text>
-                            <View className="flex-row items-center justify-between">
-                                <Text className="font-black text-lg text-rose-900">{likes.length}</Text>
-                                <Feather name="heart" size={14} color="#FB7185" />
-                            </View>
-                        </View>
-                        <View className="w-[48%] bg-amber-50/30 p-5 rounded-2xl border border-amber-100/30 shadow-sm">
-                            <Text className="text-[8px] font-black text-amber-900/40 uppercase tracking-widest mb-3">In Progress Cart</Text>
-                            <View className="flex-row items-center justify-between">
-                                <Text className="font-black text-lg text-amber-900">{cartItems.length}</Text>
-                                <Feather name="shopping-cart" size={14} color="#F59E0B" />
-                            </View>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Order History */}
-                <View className="px-6">
-                    <View className="flex-row justify-between items-end mb-6">
-                        <View>
-                            <Text className="text-xl font-black text-black uppercase tracking-tighter">Order History</Text>
-                            <Text className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Recent Transactions</Text>
-                        </View>
-                        <TouchableOpacity>
-                            <Text className="text-blue-500 text-[10px] font-black uppercase tracking-widest">View All</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    {orders.length === 0 ? (
-                        <View className="py-10 items-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                            <MaterialCommunityIcons name="receipt-text-outline" size={40} color="#D1D5DB" />
-                            <Text className="mt-3 text-gray-400 font-bold uppercase text-[10px] tracking-widest">No orders found</Text>
-                        </View>
-                    ) : (
-                        orders.map((order, idx) => (
-                            <TouchableOpacity 
-                                key={order._id || idx}
-                                onPress={() => router.push({ pathname: '/screens/orderDetailsModal', params: { orderId: order._id } })}
-                                className="mb-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex-row items-center justify-between"
-                            >
-                                <View className="flex-row items-center flex-1">
-                                    <View className="w-12 h-12 bg-gray-50 rounded-xl items-center justify-center mr-4">
-                                        <MaterialCommunityIcons name="package-variant-closed" size={24} color="#9CA3AF" />
-                                    </View>
-                                    <View>
-                                        <Text className="font-black text-sm uppercase tracking-tighter">
-                                            #{order._id?.slice(-6) || 'N/A'}
-                                        </Text>
-                                        <Text className="text-[10px] text-gray-400 font-bold uppercase mt-1">
-                                            {order.createdAt ? timeAgo(order.createdAt) : 'Recently'}
-                                        </Text>
-                                    </View>
-                                </View>
-                                <View className="items-end">
-                                    <Text className="font-black text-sm">{order.totalPrice?.toFixed(2) || '0.00'} DT</Text>
-                                    <View className={`mt-2 px-2 py-0.5 rounded-full ${order.status === 'delivered' ? 'bg-emerald-50' : 'bg-amber-50'}`}>
-                                        <Text className={`text-[8px] font-black uppercase ${order.status === 'delivered' ? 'text-emerald-600' : 'text-amber-600'}`}>
-                                            {order.status || 'Pending'}
-                                        </Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-                        ))
-                    )}
-                </View>
-            </Animated.ScrollView>
+                {isCart && purchaseId ? (
+                  <TouchableOpacity
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleDeletePurchase(purchaseId);
+                    }}
+                    className="flex-row items-center bg-red-50 px-3 py-1.5 rounded-xl border border-red-100"
+                  >
+                    <MaterialCommunityIcons name="trash-can-outline" size={12} color="#EF4444" />
+                    <Text className="text-[8.5px] font-black text-red-500 uppercase ml-1 tracking-tight">Remove</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View className="w-8 h-8 rounded-full bg-gray-50 items-center justify-center border border-gray-100">
+                    <Feather name="chevron-right" size={16} color="#D1D5DB" />
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+          );
+        })
+      ) : (
+        <View className="py-20 items-center justify-center">
+          <View className="w-20 h-20 bg-gray-50 rounded-xl items-center justify-center mb-6 border border-gray-100">
+            <MaterialCommunityIcons
+              name="package-variant-closed"
+              size={32}
+              color={colors.dark[100]}
+              style={{ opacity: 0.05 }}
+            />
+          </View>
+          <Text className="text-[10px] text-black font-black uppercase tracking-[3px] opacity-20 text-center px-10 leading-4">
+            {emptyMessage}
+          </Text>
         </View>
+      )}
+    </ScrollView>
+  );
+
+  const handleSave = async () => {
+    if (!formData) return;
+
+    // Validation
+    if (formData.email && !isValidEmail(formData.email)) {
+      setStatusBanner(true, 'Please provide a valid email address.', 'warning');
+      return;
+    }
+
+    if (formData.phone && !isValidPhone(String(formData.phone))) {
+      setStatusBanner(true, 'Phone number must be exactly 8 digits.', 'warning');
+      return;
+    }
+
+    setLoading(true);
+    Keyboard.dismiss();
+
+    try {
+      const { data } = await axios.put(`${backEndUrl}/updateClient`, {
+        updatedClientData: formData,
+      });
+
+      if (data.success) {
+        // Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setClient(formData);
+        setTimeout(() => {
+          setIsEditing(false);
+          setLoading(false);
+          setStatusBanner(true, 'Client profile synchronized successfully.', 'success');
+        }, 600);
+      }
+    } catch (error) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setStatusBanner(true, 'Update failed.', 'error');
+    } finally {
+      if (!isEditing) setLoading(false); // safety
+    }
+  };
+
+  if (fetching || !client) {
+    return (
+      <View
+        className="flex-1 justify-center items-center"
+        style={{ backgroundColor: colors.light[100] }}
+      >
+        <ActivityIndicator color={colors.dark[100]} size="large" />
+        <Text className="mt-4 text-[10px] font-black opacity-30 uppercase tracking-[4px]">
+          Analysing Dossier
+        </Text>
+      </View>
     );
+  }
+
+  return (
+    <View className="flex-1" style={{ backgroundColor: colors.light[100] }}>
+      <StatusBar barStyle="dark-content" />
+
+      {/* ==================== MODERN HEADER (v2 style) ==================== */}
+      <View className="px-6 pt-14 pb-4 flex-row justify-between items-center bg-white border-b border-gray-100">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="w-12 h-12 bg-gray-50 rounded-xl items-center justify-center border border-gray-100"
+        >
+          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.dark[100]} />
+        </TouchableOpacity>
+
+        <View className="items-center">
+          <Text className="text-[10px] font-black uppercase tracking-[3px] text-black/20 mb-1">
+            Dossier Profile
+          </Text>
+          <Text className="text-lg font-black text-black">
+            {isEditing ? 'Editor Mode' : client.fullName}
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          onPress={() => (isEditing ? handleSave() : setIsEditing(true))}
+          className={`w-12 h-12 rounded-xl items-center justify-center shadow-sm ${isEditing ? 'bg-black' : 'bg-gray-50 border border-gray-100'
+            }`}
+        >
+          <MaterialCommunityIcons
+            name={
+              loading
+                ? 'dots-horizontal'
+                : isEditing
+                  ? 'check-all'
+                  : 'account-edit-outline'
+            }
+            size={22}
+            color={isEditing ? 'white' : colors.dark[100]}
+          />
+        </TouchableOpacity>
+      </View>
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1"
+      >
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 100 }}
+        >
+          {/* ==================== PREMIUM HEADER STATS ==================== */}
+          <View className="mx-6 mt-6 bg-black rounded-xl p-8 shadow-2xl relative overflow-hidden">
+            <View className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16" />
+
+            <View className="mb-8">
+              <Text className="text-white/40 text-[10px] font-black uppercase tracking-[3px] mb-4">Lifetime Value</Text>
+              <View className="flex-row items-baseline">
+                <Text className="text-white text-4xl font-black">
+                  {ordersHistory
+                    .filter(order => order.status === 'delivered')
+                    .reduce((acc, order) => acc + (calcTotalPrice(order) || 0) + (order.shippingCoast || 0), 0)
+                    .toFixed(2)} D.T
+                </Text>
+                <Text className="text-emerald-400 text-xs font-bold ml-2 uppercase tracking-widest">Revenue</Text>
+              </View>
+            </View>
+
+            <View className="flex-row justify-between pt-6 border-t border-white/10">
+              {[
+                { label: 'Orders', val: ordersHistory.length, icon: 'package-variant-closed', color: '#60a5fa' },
+                { label: 'In Cart', val: cartItems.length, icon: 'cart-outline', color: '#facc15' },
+                { label: 'Favorites', val: likedProducts.length, icon: 'heart-outline', color: '#f87171' },
+              ].map((s, i) => (
+                <View key={i} className="flex-1 items-center border-r border-white/5 last:border-0">
+                  <MaterialCommunityIcons name={s.icon as any} size={18} color={s.color} style={{ marginBottom: 6 }} />
+                  <Text className="text-white text-lg font-black">{s.val}</Text>
+                  <Text className="text-white/30 text-[8px] font-bold uppercase tracking-tighter">{s.label}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* ==================== IDENTITY CARD (v2 beautiful style) ==================== */}
+          <View className="mx-6 mt-6 bg-white rounded-xl p-8 border border-gray-100 shadow-sm">
+            <View className="flex-row items-center mb-8">
+              <View className="w-1.5 h-6 bg-black rounded-full mr-3" />
+              <Text className="text-sm font-black uppercase tracking-widest text-black">
+                Identity Information
+              </Text>
+            </View>
+
+            {[
+              { label: 'Legal Name', key: 'fullName', icon: 'account-outline' },
+              { label: 'Direct Line', key: 'phone', icon: 'phone-outline', kb: 'phone-pad' },
+              { label: 'Digital Mail', key: 'email', icon: 'at', kb: 'email-address' },
+              { label: 'Geography', key: 'address', icon: 'map-marker-outline' },
+            ].map((item, idx) => {
+              const isPhone = item.key === 'phone';
+              const isEmail = item.key === 'email';
+              const value = String(formData[item.key] || '');
+
+              const isInvalidEmail = isEmail && value && !isValidEmail(value);
+              const isInvalidPhone = isPhone && value && !isValidPhone(value);
+              const isInvalid = isInvalidEmail || isInvalidPhone;
+
+              return (
+                <View key={idx} className="mb-8 last:mb-0">
+                  <Text className={`text-[9px] font-black uppercase tracking-[2px] mb-2 ml-1 ${isInvalid ? 'text-red-500' : 'text-black/20'}`}>
+                    {item.label}
+                  </Text>
+                  <View className={`flex-row items-center bg-gray-50 rounded-xl p-4 border ${isInvalid ? 'border-red-500' : 'border-gray-100/50'}`}>
+                    <MaterialCommunityIcons
+                      name={item.icon as any}
+                      size={18}
+                      color={isInvalid ? "#ef4444" : colors.dark[100]}
+                      style={{ opacity: isInvalid ? 1 : 0.4 }}
+                    />
+                    {isEditing ? (
+                      <TextInput
+                        className="flex-1 ml-4 text-sm font-bold text-black"
+                        value={value}
+                        onChangeText={(t) => {
+                          let val = t;
+                          if (isPhone) {
+                            val = t.replace(/\D/g, '').slice(0, 8);
+                          }
+                          setFormData({ ...formData, [item.key]: val });
+                        }}
+                        keyboardType={item.kb as any || 'default'}
+                        maxLength={isPhone ? 8 : undefined}
+                      />
+                    ) : (
+                      <Text className="flex-1 ml-4 text-sm font-bold text-black">
+                        {client[item.key] || 'Not Provided'}
+                      </Text>
+                    )}
+                  </View>
+                  {isEditing && isInvalidEmail && (
+                    <Text className="text-[9px] text-red-500 font-bold mt-1 ml-2 uppercase">Invalid email format</Text>
+                  )}
+                  {isEditing && isInvalidPhone && (
+                    <Text className="text-[9px] text-red-500 font-bold mt-1 ml-2 uppercase">Must be exactly 8 digits</Text>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+
+          {/* ==================== BEHAVIORAL ANALYSIS (Cart + Likes) ==================== */}
+          <View className="px-6 mt-8">
+            <Text className="text-[11px] font-black text-black/20 uppercase tracking-[3px] mb-4 ml-2">
+              Marketplace Interest
+            </Text>
+            <View className="flex-row gap-4 mb-8">
+              <TouchableOpacity
+                onPress={() => {
+                  // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowCartModal(true);
+                }}
+                className="flex-1 bg-white p-5 rounded-xl border border-gray-100 shadow-sm items-center"
+              >
+                <View className="w-14 h-14 bg-gray-50 rounded-full items-center justify-center mb-3">
+                  <MaterialCommunityIcons name="shopping-outline" size={30} color="black" />
+                </View>
+                <Text className="text-lg font-black">{cartItems.length}</Text>
+                <Text className="text-[8px] font-bold uppercase opacity-40">Cart Objects</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowLikesModal(true);
+                }}
+                className="flex-1 bg-white p-5 rounded-xl border border-gray-100 shadow-sm items-center"
+              >
+                <View className="w-14 h-14 bg-rose-50 rounded-full items-center justify-center mb-3">
+                  <MaterialCommunityIcons name="heart-pulse" size={30} color="#f43f5e" />
+                </View>
+                <Text className="text-lg font-black">{likedProducts.length}</Text>
+                <Text className="text-[8px] font-bold uppercase opacity-40">Favorite</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* ==================== ORDER HISTORY (restored + modern card) ==================== */}
+          <View className="mx-6 mb-8 bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+            <View className="flex-row justify-between items-center mb-6">
+              <Text className="text-[11px] font-black text-black/20 uppercase tracking-[2px]">
+                Recent Orders
+              </Text>
+              {ordersHistory.length > 5 && (
+                <TouchableOpacity
+                  onPress={() => setShowOrdersModal(true)}
+                  className="px-3 py-1"
+                >
+                  <Text className="text-[10px] font-bold text-black">View All</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {ordersHistory.length > 0 ? (
+              ordersHistory.slice(0, 5).map((order, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  onPress={() => {
+                    setSelectedOrder(order);
+                    setIsOrderModalVisible(true);
+                  }}
+                  className="flex-row items-center justify-between py-4 border-b border-gray-50 last:border-0"
+                >
+                  <View className="flex-row items-center">
+                    <View
+                      className={`w-2 h-2 rounded-full mr-3 ${order.status === 'delivered' ? 'bg-emerald-500' : order.status === 'pending' ? 'bg-amber-500' : 'bg-rose-500'
+                        }`}
+                    />
+                    <View>
+                      <Text className="text-xs font-black text-black">
+                        Order #{order.orderNumber}
+                      </Text>
+                      <Text className="text-[9px] text-black/40 font-bold uppercase">
+                        {order.status}
+                      </Text>
+                    </View>
+                  </View>
+                  <View className='flex-row items-center'>
+                    <Text className="text-xs font-black text-emerald-600 mr-2">
+                      {((calcTotalPrice(order) || 0) + (order.shippingCoast || 0)).toFixed(2)} DT
+                    </Text>
+                    <Feather name="chevron-right" size={14} color="#D1D5DB" />
+                  </View>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <Text className="text-xs text-black/30 text-center py-4">No transactions found.</Text>
+            )}
+          </View>
+
+          {/* ==================== AI INTELLIGENCE CARD (premium dark style) ==================== */}
+          <View className="mx-6 mb-8">
+            <TouchableOpacity
+              onPress={() => setShowSummary(true)}
+              activeOpacity={0.9}
+              className="bg-black rounded-xl p-8 shadow-2xl"
+            >
+              <View className="flex-row justify-between items-start mb-6">
+                <View className="flex-row items-center">
+                  <View className="bg-white/10 p-2.5 rounded-xl mr-3">
+                    <MaterialCommunityIcons name="brain" size={20} color="white" />
+                  </View>
+                  <Text className="text-white font-black text-xs uppercase tracking-[2px]">
+                    AI Briefing
+                  </Text>
+                </View>
+                <View className="bg-emerald-500 w-2 h-2 rounded-full shadow-[0_0_10px_#10b981]" />
+              </View>
+
+              <Text
+                className="text-white/70 text-xs leading-6 italic mb-6"
+                numberOfLines={3}
+              >
+                {chatHistory[0]?.summary?.replace(/\*+/g, '') ||
+                  'Awaiting intelligence collection from future interactions...'}
+              </Text>
+
+              <View className="flex-row gap-3">
+                <TouchableOpacity
+                  onPress={() => setShowTranscript(true)}
+                  className="flex-1 bg-white/10 h-14 rounded-xl items-center justify-center border border-white/5"
+                >
+                  {fetchingChat ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <Text className="text-white font-black text-[10px] uppercase tracking-widest">
+                      Live Logs
+                    </Text>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => setShowSummary(true)}
+                  className="flex-1 bg-emerald-500 h-14 rounded-xl items-center justify-center"
+                >
+                  <Text className="text-black font-black text-[10px] uppercase tracking-widest">
+                    Full Brief
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* ==================== FLOATING BOTTOM ACTIONS (v2 style) ==================== */}
+      {!isEditing && (
+        <View className="absolute bottom-10 left-6 right-6 flex-row gap-4 h-20 items-center px-4 bg-white/80 rounded-xl border border-white/20 shadow-2xl backdrop-blur-md">
+          <TouchableOpacity
+            className="flex-1 h-14 bg-black rounded-xl flex-row items-center justify-center"
+            onPress={() => handleCall(client.phone?.toString() || '')}
+          >
+            <MaterialCommunityIcons name="phone" size={18} color="white" />
+            <Text className="text-white font-black ml-3 uppercase text-[10px] tracking-widest">Call</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="w-14 h-14 bg-emerald-500 rounded-xl items-center justify-center shadow-lg"
+            onPress={() => handleWhatsApp(client.phone?.toString() || '')}
+          >
+            <MaterialCommunityIcons name="whatsapp" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* ==================== MODALS (kept from v1 + modern rounded styling) ==================== */}
+
+      {/* AI Summary Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showSummary}
+        onRequestClose={() => setShowSummary(false)}
+      >
+        <View className="flex-1 bg-black/80 justify-center px-6">
+          <View
+            style={{ backgroundColor: colors.light[100] }}
+            className="rounded-xl p-8 max-h-[70%] shadow-2xl"
+          >
+            <View className="flex-row justify-between items-center mb-8">
+              <View>
+                <Text className="text-[10px] font-black uppercase tracking-[3px] text-black/20 mb-1">
+                  Intelligence
+                </Text>
+                <Text className="text-xl font-black text-black">Briefing</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowSummary(false)}
+                className="w-10 h-10 bg-gray-50 rounded-xl items-center justify-center border border-gray-100"
+              >
+                <MaterialCommunityIcons name="close" size={18} color={colors.dark[100]} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {chatHistory[0]?.summary ? (
+                chatHistory[0].summary
+                  .split('\n')
+                  .map((line: string, i: number) => (
+                    <Text
+                      key={i}
+                      className="text-gray-600 text-[14px] leading-6 mb-3"
+                    >
+                      {line.replace(/\*+/g, '').trim()}
+                    </Text>
+                  ))
+              ) : (
+                <View className="py-20 items-center justify-center">
+                  <View className="w-16 h-16 bg-gray-50 rounded-xl items-center justify-center mb-6">
+                    <MaterialCommunityIcons name="brain" size={30} color={colors.dark[100]} style={{ opacity: 0.1 }} />
+                  </View>
+                  <Text className="text-center text-[10px] font-black text-black uppercase tracking-[2px] opacity-40 mb-2">
+                    No dossier yet
+                  </Text>
+                  <Text className="text-center text-[11px] text-gray-400 font-bold px-6 leading-5">
+                    The AI has not yet collected enough data to generate a behavioral summary for this client.
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Live Transcript Modal */}
+      <LiveChatModal
+        showTranscript={showTranscript}
+        setShowTranscript={setShowTranscript}
+        chatHistory={chatHistory}
+      />
+
+      {/* Cart Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showCartModal}
+        onRequestClose={() => setShowCartModal(false)}
+      >
+        <View className="flex-1 bg-black/80 justify-end">
+          <View
+            style={{ backgroundColor: colors.light[100] }}
+            className="rounded-t-xl h-[70%] p-8"
+          >
+            <View className="flex-row justify-between items-center mb-10">
+              <View>
+                <Text className="text-[10px] font-black uppercase tracking-[3px] text-black/20 mb-1">
+                  Active Interest
+                </Text>
+                <Text className="text-xl font-black text-black">Cart Items</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowCartModal(false)}
+                className="w-12 h-12 bg-gray-50 rounded-xl items-center justify-center border border-gray-100"
+              >
+                <MaterialCommunityIcons name="close" size={20} color={colors.dark[100]} />
+              </TouchableOpacity>
+            </View>
+            {renderProductList(cartItems, 'The client selection is empty', true)}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Likes Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showLikesModal}
+        onRequestClose={() => setShowLikesModal(false)}
+      >
+        <View className="flex-1 bg-black/80 justify-end">
+          <View
+            style={{ backgroundColor: colors.light[100] }}
+            className="rounded-t-xl h-[70%] p-8"
+          >
+            <View className="flex-row justify-between items-center mb-10">
+              <View>
+                <Text className="text-[10px] font-black uppercase tracking-[3px] text-black/20 mb-1">
+                  Interest List
+                </Text>
+                <Text className="text-xl font-black text-black">Favorites</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowLikesModal(false)}
+                className="w-12 h-12 bg-gray-50 rounded-xl items-center justify-center border border-gray-100"
+              >
+                <MaterialCommunityIcons name="close" size={20} color={colors.dark[100]} />
+              </TouchableOpacity>
+            </View>
+            {renderProductList(likedProducts, 'No saved items in Favorites')}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Orders Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showOrdersModal}
+        onRequestClose={() => setShowOrdersModal(false)}
+      >
+        <View className="flex-1 bg-black/80 justify-end">
+          <View
+            style={{ backgroundColor: colors.light[100] }}
+            className="rounded-t-xl h-[70%] p-8"
+          >
+            <View className="flex-row justify-between items-center mb-10">
+              <View>
+                <Text className="text-[10px] font-black uppercase tracking-[3px] text-black/20 mb-1">
+                  Ledger History
+                </Text>
+                <Text className="text-xl font-black text-black">Transaction Logs</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowOrdersModal(false)}
+                className="w-12 h-12 bg-gray-50 rounded-xl items-center justify-center border border-gray-100"
+              >
+                <MaterialCommunityIcons name="close" size={20} color={colors.dark[100]} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+              {ordersHistory.length > 0 ? (
+                ordersHistory.map((order, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    onPress={() => {
+                      setSelectedOrder(order);
+                      setIsOrderModalVisible(true);
+                    }}
+                    className="flex-row items-center justify-between p-5 mb-4 bg-gray-50 rounded-xl border border-gray-100"
+                  >
+                    <View className="flex-row items-center">
+                      <View className={`w-2 h-2 rounded-full mr-4 ${order.status === 'delivered' ? 'bg-emerald-500' : order.status === 'pending' ? 'bg-amber-500' : 'bg-rose-500'}`} />
+                      <View>
+                        <Text className="text-sm font-black text-black">
+                          Dossier #{order.orderNumber}
+                        </Text>
+                        <Text className="text-[10px] text-black/40 font-bold uppercase tracking-wider">
+                          Status: {order.status}
+                        </Text>
+                      </View>
+                    </View>
+                    <View className='flex-row items-center'>
+                      <Text className="text-xs font-black text-emerald-600 mr-3">
+                        {((calcTotalPrice(order) || 0) + (order.shippingCoast || 0)).toFixed(2)} DT
+                      </Text>
+                      <Feather name="chevron-right" size={16} color="#D1D5DB" />
+                    </View>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <View className="py-20 items-center justify-center">
+                  <View className="w-16 h-16 bg-gray-50 rounded-xl items-center justify-center mb-6">
+                    <MaterialCommunityIcons name="package-variant-closed" size={30} color={colors.dark[100]} style={{ opacity: 0.1 }} />
+                  </View>
+                  <Text className="text-center text-[10px] font-black text-black uppercase tracking-[2px] opacity-40 mb-2">
+                    Clean Slate
+                  </Text>
+                  <Text className="text-center text-[11px] text-gray-400 font-bold px-6 leading-5">
+                    There are no recorded transactions associated with this client profile.
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      <OrderDetailsModal
+        isVisible={isOrderModalVisible}
+        onClose={() => setIsOrderModalVisible(false)}
+        order={selectedOrder}
+        deliveryWorker={deliveryWorker}
+        onUpdateSuccess={() => {
+          // refresh orders if needed (optional since we're just viewing)
+        }}
+      />
+    </View>
+  );
 };
 
 export default ClientDetails;
