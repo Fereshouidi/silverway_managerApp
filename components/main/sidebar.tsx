@@ -4,7 +4,7 @@ import { useOwner } from '@/contexts/owner';
 import { AdminAccess } from '@/types';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter, usePathname } from 'expo-router';
+import { useRouter, usePathname, useGlobalSearchParams } from 'expo-router';
 import React from 'react';
 import {
   Image,
@@ -35,6 +35,7 @@ export default function Sidebar({ closeDrawer }: SidebarProps) {
   const { showBanner } = useBanner();
   const router = useRouter();
   const pathname = usePathname();
+  const params = useGlobalSearchParams();
   const { ownerInfo } = useOwner();
 
   const items: SidebarItem[] = [
@@ -74,8 +75,24 @@ export default function Sidebar({ closeDrawer }: SidebarProps) {
   };
 
   const isActive = (route: string) => {
-    const base = route.replace('/(tabs)/', '');
-    return pathname?.includes(base) ?? false;
+    const [pathPart, queryPart] = route.split('?');
+    const base = pathPart.replace('/(tabs)/', '');
+    
+    // Check if the current pathname matches the base route
+    if (pathname?.includes(base)) {
+      if (queryPart) {
+        // If route has specific query params required (e.g. ?tab=collections)
+        const [key, value] = queryPart.split('=');
+        return params[key] === value;
+      } else {
+        // If route has NO query params, make sure the current URL isn't meant for a sub-tab
+        if (base === 'products' && params.tab === 'collections') {
+          return false;
+        }
+        return true;
+      }
+    }
+    return false;
   };
 
   return (

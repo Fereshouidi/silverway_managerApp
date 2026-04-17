@@ -2,14 +2,14 @@ import { backEndUrl } from '@/api';
 import LiveChatModal from '@/components/main/liveChatModal';
 import { colors } from '@/constants';
 import { useStatusBanner } from '@/contexts/StatusBanner';
-import { calcTotalPrice, handleCall, handleWhatsApp, isValidEmail, isValidPhone } from '@/lib';
+import { calcTotalPrice, handleCall, handleWhatsApp, isValidEmail, isValidPhone, timeAgo } from '@/lib';
 import { ProductType, OrderType, DeliveryWorkerType } from '@/types';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import OrderDetailsModal from '@/app/screens/orderDetailsModal';
 import axios from 'axios';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -27,6 +27,8 @@ import {
   FlatList,
 } from 'react-native';
 import Markdown, { ASTNode } from 'react-native-markdown-display';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const ClientDetails = () => {
   const { id } = useLocalSearchParams();
@@ -56,6 +58,22 @@ const ClientDetails = () => {
   const [selectedOrder, setSelectedOrder] = useState<OrderType | null>(null);
   const [isOrderModalVisible, setIsOrderModalVisible] = useState(false);
   const [deliveryWorker, setDeliveryWorker] = useState<DeliveryWorkerType | undefined>(undefined);
+
+  // Derived data
+  const deliveredOrders = useMemo(() =>
+    ordersHistory.filter(o => o.status === 'delivered'), [ordersHistory]);
+
+  const lifetimeValue = useMemo(() =>
+    deliveredOrders.reduce((acc, order) => acc + (calcTotalPrice(order) || 0) + (order.shippingCoast || 0), 0),
+    [deliveredOrders]);
+
+  const initials = useMemo(() => {
+    if (!client?.fullName) return '?';
+    const parts = client.fullName.trim().split(/\s+/);
+    return parts.length >= 2
+      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      : parts[0].substring(0, 2).toUpperCase();
+  }, [client?.fullName]);
 
   useEffect(() => {
     const fetchAllClientData = async () => {
@@ -172,10 +190,10 @@ const ClientDetails = () => {
                   params: { id: item._id }
                 });
               }}
-              className="flex-row items-center mb-5 bg-white p-5 rounded-xl border border-gray-100 shadow-sm"
+              className="flex-row items-center mb-3 bg-white p-4 rounded-2xl border border-gray-100/80"
             >
               {/* Image Container */}
-              <View className="w-16 h-16 bg-gray-50 rounded-xl items-center justify-center mr-5 shadow-inner overflow-hidden border border-gray-100/50">
+              <View className="w-14 h-14 bg-gray-50 rounded-xl items-center justify-center mr-4 overflow-hidden">
                 {productImage ? (
                   <Image
                     source={{ uri: productImage }}
@@ -185,7 +203,7 @@ const ClientDetails = () => {
                 ) : (
                   <MaterialCommunityIcons
                     name="package-variant"
-                    size={28}
+                    size={24}
                     color={colors.dark[100]}
                     style={{ opacity: 0.1 }}
                   />
@@ -194,27 +212,27 @@ const ClientDetails = () => {
 
               {/* Info Section */}
               <View className="flex-1 justify-center">
-                <Text className="text-[13px] font-black text-black mb-1" numberOfLines={1}>
+                <Text className="text-[13px] font-bold text-black mb-1" numberOfLines={1}>
                   {typeof item.name === 'object'
                     ? (item.name?.en || item.name?.fr || 'Unknown Product')
                     : (item.name || 'Unknown Product')}
                 </Text>
                 {isCart && entry.specification ? (
-                  <View className="flex-row items-center bg-emerald-50 self-start px-2 py-0.5 rounded-full border border-emerald-100/50">
-                    <Text className="text-[8px] text-emerald-700 font-black uppercase tracking-tighter">
-                      {entry.specification.color || 'STNDRD'} / {entry.specification.size || 'UNISZ'} × {entry.quantity || 1}
+                  <View className="flex-row items-center bg-gray-50 self-start px-2.5 py-1 rounded-lg">
+                    <Text className="text-[9px] text-gray-500 font-bold uppercase tracking-tight">
+                      {entry.specification.color || 'Standard'} · {entry.specification.size || 'Uni'} × {entry.quantity || 1}
                     </Text>
                   </View>
                 ) : (
-                  <Text className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                  <Text className="text-[10px] text-gray-400 font-medium">
                     Official Item
                   </Text>
                 )}
               </View>
 
               {/* Price & Actions */}
-              <View className="items-end ml-4">
-                <Text className="text-sm font-black text-black mb-1.5">
+              <View className="items-end ml-3">
+                <Text className="text-sm font-bold text-black mb-1">
                   {item.price ?? 0} DT
                 </Text>
 
@@ -224,15 +242,13 @@ const ClientDetails = () => {
                       e.stopPropagation();
                       handleDeletePurchase(purchaseId);
                     }}
-                    className="flex-row items-center bg-red-50 px-3 py-1.5 rounded-xl border border-red-100"
+                    className="flex-row items-center bg-red-50 px-3 py-1.5 rounded-lg"
                   >
-                    <MaterialCommunityIcons name="trash-can-outline" size={12} color="#EF4444" />
-                    <Text className="text-[8.5px] font-black text-red-500 uppercase ml-1 tracking-tight">Remove</Text>
+                    <MaterialCommunityIcons name="trash-can-outline" size={11} color="#EF4444" />
+                    <Text className="text-[8px] font-bold text-red-500 uppercase ml-1">Remove</Text>
                   </TouchableOpacity>
                 ) : (
-                  <View className="w-8 h-8 rounded-full bg-gray-50 items-center justify-center border border-gray-100">
-                    <Feather name="chevron-right" size={16} color="#D1D5DB" />
-                  </View>
+                  <Feather name="chevron-right" size={16} color="#D1D5DB" />
                 )}
               </View>
             </TouchableOpacity>
@@ -240,15 +256,15 @@ const ClientDetails = () => {
         })
       ) : (
         <View className="py-20 items-center justify-center">
-          <View className="w-20 h-20 bg-gray-50 rounded-xl items-center justify-center mb-6 border border-gray-100">
+          <View className="w-16 h-16 bg-gray-50 rounded-2xl items-center justify-center mb-5">
             <MaterialCommunityIcons
               name="package-variant-closed"
-              size={32}
+              size={28}
               color={colors.dark[100]}
-              style={{ opacity: 0.05 }}
+              style={{ opacity: 0.08 }}
             />
           </View>
-          <Text className="text-[10px] text-black font-black uppercase tracking-[3px] opacity-20 text-center px-10 leading-4">
+          <Text className="text-[10px] text-gray-300 font-bold uppercase tracking-[2px] text-center px-10 leading-4">
             {emptyMessage}
           </Text>
         </View>
@@ -295,58 +311,54 @@ const ClientDetails = () => {
     }
   };
 
+  // ========== LOADING STATE ==========
   if (fetching || !client) {
     return (
       <View
         className="flex-1 justify-center items-center"
-        style={{ backgroundColor: colors.light[100] }}
+        style={{ backgroundColor: '#FAFAFA' }}
       >
-        <ActivityIndicator color={colors.dark[100]} size="large" />
-        <Text className="mt-4 text-[10px] font-black opacity-30 uppercase tracking-[4px]">
-          Analysing Dossier
+        <View className="w-16 h-16 bg-black/5 rounded-2xl items-center justify-center mb-5">
+          <ActivityIndicator color={colors.dark[100]} size="small" />
+        </View>
+        <Text className="text-[10px] font-bold opacity-20 uppercase tracking-[3px]">
+          Loading Profile
         </Text>
       </View>
     );
   }
 
+  // ========== MAIN RENDER ==========
   return (
-    <View className="flex-1" style={{ backgroundColor: colors.light[100] }}>
+    <View className="flex-1" style={{ backgroundColor: '#FAFAFA' }}>
       <StatusBar barStyle="dark-content" />
 
-      {/* ==================== MODERN HEADER (v2 style) ==================== */}
-      <View className="px-6 pt-14 pb-4 flex-row justify-between items-center bg-white border-b border-gray-100">
+      {/* ==================== HEADER ==================== */}
+      <View className="px-5 pt-14 pb-3 flex-row justify-between items-center" style={{ backgroundColor: '#FAFAFA' }}>
         <TouchableOpacity
           onPress={() => router.back()}
-          className="w-12 h-12 bg-gray-50 rounded-xl items-center justify-center border border-gray-100"
+          className="w-11 h-11 bg-white rounded-xl items-center justify-center border border-gray-100/60"
         >
-          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.dark[100]} />
+          <Feather name="arrow-left" size={20} color="#1a1a1a" />
         </TouchableOpacity>
 
-        <View className="items-center">
-          <Text className="text-[10px] font-black uppercase tracking-[3px] text-black/20 mb-1">
-            Dossier Profile
-          </Text>
-          <Text className="text-lg font-black text-black">
-            {isEditing ? 'Editor Mode' : client.fullName}
-          </Text>
-        </View>
+        <Text className="text-[11px] font-bold uppercase tracking-[2px] text-gray-300">
+          Client Profile
+        </Text>
 
         <TouchableOpacity
           onPress={() => (isEditing ? handleSave() : setIsEditing(true))}
-          className={`w-12 h-12 rounded-xl items-center justify-center shadow-sm ${isEditing ? 'bg-black' : 'bg-gray-50 border border-gray-100'
-            }`}
+          className={`w-11 h-11 rounded-xl items-center justify-center ${isEditing ? 'bg-black' : 'bg-white border border-gray-100/60'}`}
         >
-          <MaterialCommunityIcons
-            name={
-              loading
-                ? 'dots-horizontal'
-                : isEditing
-                  ? 'check-all'
-                  : 'account-edit-outline'
-            }
-            size={22}
-            color={isEditing ? 'white' : colors.dark[100]}
-          />
+          {loading ? (
+            <ActivityIndicator size="small" color={isEditing ? 'white' : 'black'} />
+          ) : (
+            <Feather
+              name={isEditing ? 'check' : 'edit-2'}
+              size={16}
+              color={isEditing ? 'white' : '#1a1a1a'}
+            />
+          )}
         </TouchableOpacity>
       </View>
 
@@ -356,78 +368,119 @@ const ClientDetails = () => {
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 120 }}
         >
-          {/* ==================== PREMIUM HEADER STATS ==================== */}
-          <View className="mx-6 mt-6 bg-black rounded-xl p-8 shadow-2xl relative overflow-hidden">
-            <View className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16" />
+          {/* ==================== PROFILE HERO ==================== */}
+          <View className="items-center pt-4 pb-6">
+            {/* Avatar Circle */}
+            <View className="w-20 h-20 bg-black rounded-full items-center justify-center mb-4">
+              <Text className="text-white text-2xl font-black">{initials}</Text>
+            </View>
+            <Text className="text-xl font-black text-black mb-1">
+              {client.fullName || 'Unknown Client'}
+            </Text>
+            <Text className="text-[11px] text-gray-400 font-medium">
+              {client.email || client.phone ? `${client.phone || ''}${client.phone && client.email ? ' · ' : ''}${client.email || ''}` : 'No contact info'}
+            </Text>
+            {client.address && (
+              <View className="flex-row items-center mt-2">
+                <Feather name="map-pin" size={11} color="#9CA3AF" />
+                <Text className="text-[11px] text-gray-400 font-medium ml-1">{client.address}</Text>
+              </View>
+            )}
+          </View>
 
-            <View className="mb-8">
-              <Text className="text-white/40 text-[10px] font-black uppercase tracking-[3px] mb-4">Lifetime Value</Text>
-              <View className="flex-row items-baseline">
-                <Text className="text-white text-4xl font-black">
-                  {ordersHistory
-                    .filter(order => order.status === 'delivered')
-                    .reduce((acc, order) => acc + (calcTotalPrice(order) || 0) + (order.shippingCoast || 0), 0)
-                    .toFixed(2)} D.T
+          {/* ==================== LIFETIME VALUE CARD ==================== */}
+          <View className="mx-5 mb-4 bg-black rounded-2xl p-6 overflow-hidden">
+            <View className="absolute top-0 right-0 w-40 h-40 bg-white/[0.03] rounded-full -mr-20 -mt-20" />
+            <View className="absolute bottom-0 left-0 w-24 h-24 bg-white/[0.02] rounded-full -ml-12 -mb-12" />
+
+            <View className="flex-row justify-between items-start">
+              <View>
+                <Text className="text-white/30 text-[9px] font-bold uppercase tracking-[2px] mb-2">Lifetime Value</Text>
+                <Text className="text-white text-3xl font-black">
+                  {lifetimeValue.toFixed(0)} <Text className="text-lg text-white/60">DT</Text>
                 </Text>
-                <Text className="text-emerald-400 text-xs font-bold ml-2 uppercase tracking-widest">Revenue</Text>
+              </View>
+              <View className="bg-emerald-500/20 px-3 py-1.5 rounded-lg">
+                <Text className="text-emerald-400 text-[9px] font-bold uppercase tracking-wider">
+                  {deliveredOrders.length} {deliveredOrders.length === 1 ? 'order' : 'orders'}
+                </Text>
               </View>
             </View>
 
-            <View className="flex-row justify-between pt-6 border-t border-white/10">
+            {/* Mini Stats Row */}
+            <View className="flex-row mt-5 pt-5 border-t border-white/[0.06]">
               {[
-                { label: 'Orders', val: ordersHistory.length, icon: 'package-variant-closed', color: '#60a5fa' },
-                { label: 'In Cart', val: cartItems.length, icon: 'cart-outline', color: '#facc15' },
-                { label: 'Favorites', val: likedProducts.length, icon: 'heart-outline', color: '#f87171' },
+                { label: 'Total Orders', val: ordersHistory.length, icon: 'package' as const, color: '#60a5fa' },
+                { label: 'In Cart', val: cartItems.length, icon: 'shopping-cart' as const, color: '#fbbf24' },
+                { label: 'Favorites', val: likedProducts.length, icon: 'heart' as const, color: '#f87171' },
               ].map((s, i) => (
-                <View key={i} className="flex-1 items-center border-r border-white/5 last:border-0">
-                  <MaterialCommunityIcons name={s.icon as any} size={18} color={s.color} style={{ marginBottom: 6 }} />
-                  <Text className="text-white text-lg font-black">{s.val}</Text>
-                  <Text className="text-white/30 text-[8px] font-bold uppercase tracking-tighter">{s.label}</Text>
+                <View key={i} className="flex-1 items-center">
+                  <Feather name={s.icon} size={14} color={s.color} style={{ marginBottom: 6, opacity: 0.8 }} />
+                  <Text className="text-white text-base font-black">{s.val}</Text>
+                  <Text className="text-white/25 text-[8px] font-bold uppercase tracking-tight mt-0.5">{s.label}</Text>
                 </View>
               ))}
             </View>
           </View>
 
-          {/* ==================== IDENTITY CARD (v2 beautiful style) ==================== */}
-          <View className="mx-6 mt-6 bg-white rounded-xl p-8 border border-gray-100 shadow-sm">
-            <View className="flex-row items-center mb-8">
-              <View className="w-1.5 h-6 bg-black rounded-full mr-3" />
-              <Text className="text-sm font-black uppercase tracking-widest text-black">
-                Identity Information
-              </Text>
-            </View>
+          {/* ==================== QUICK ACTIONS ==================== */}
+          <View className="mx-5 mb-5 flex-row gap-3">
+            <TouchableOpacity
+              onPress={() => handleCall(client.phone?.toString() || '')}
+              className="flex-1 bg-white h-14 rounded-2xl flex-row items-center justify-center border border-gray-100/60"
+            >
+              <Feather name="phone" size={15} color="#1a1a1a" />
+              <Text className="text-[11px] font-bold text-black ml-2.5 uppercase tracking-wider">Call</Text>
+            </TouchableOpacity>
 
-            {[
-              { label: 'Legal Name', key: 'fullName', icon: 'account-outline' },
-              { label: 'Direct Line', key: 'phone', icon: 'phone-outline', kb: 'phone-pad' },
-              { label: 'Digital Mail', key: 'email', icon: 'at', kb: 'email-address' },
-              { label: 'Geography', key: 'address', icon: 'map-marker-outline' },
-            ].map((item, idx) => {
-              const isPhone = item.key === 'phone';
-              const isEmail = item.key === 'email';
-              const value = String(formData[item.key] || '');
+            <TouchableOpacity
+              onPress={() => handleWhatsApp(client.phone?.toString() || '')}
+              className="flex-1 bg-[#25D366] h-14 rounded-2xl flex-row items-center justify-center"
+            >
+              <MaterialCommunityIcons name="whatsapp" size={18} color="white" />
+              <Text className="text-[11px] font-bold text-white ml-2 uppercase tracking-wider">WhatsApp</Text>
+            </TouchableOpacity>
+          </View>
 
-              const isInvalidEmail = isEmail && value && !isValidEmail(value);
-              const isInvalidPhone = isPhone && value && !isValidPhone(value);
-              const isInvalid = isInvalidEmail || isInvalidPhone;
+          {/* ==================== IDENTITY CARD ==================== */}
+          {isEditing && (
+            <View className="mx-5 mb-5 bg-white rounded-2xl p-6 border border-gray-100/60">
+              <View className="flex-row items-center mb-6">
+                <View className="w-1 h-5 bg-black rounded-full mr-3" />
+                <Text className="text-[11px] font-bold uppercase tracking-[2px] text-gray-400">
+                  Edit Details
+                </Text>
+              </View>
 
-              return (
-                <View key={idx} className="mb-8 last:mb-0">
-                  <Text className={`text-[9px] font-black uppercase tracking-[2px] mb-2 ml-1 ${isInvalid ? 'text-red-500' : 'text-black/20'}`}>
-                    {item.label}
-                  </Text>
-                  <View className={`flex-row items-center bg-gray-50 rounded-xl p-4 border ${isInvalid ? 'border-red-500' : 'border-gray-100/50'}`}>
-                    <MaterialCommunityIcons
-                      name={item.icon as any}
-                      size={18}
-                      color={isInvalid ? "#ef4444" : colors.dark[100]}
-                      style={{ opacity: isInvalid ? 1 : 0.4 }}
-                    />
-                    {isEditing ? (
+              {[
+                { label: 'Full Name', key: 'fullName', icon: 'user' as const },
+                { label: 'Phone', key: 'phone', icon: 'phone' as const, kb: 'phone-pad' },
+                { label: 'Email', key: 'email', icon: 'mail' as const, kb: 'email-address' },
+                { label: 'Address', key: 'address', icon: 'map-pin' as const },
+              ].map((item, idx) => {
+                const isPhone = item.key === 'phone';
+                const isEmail = item.key === 'email';
+                const value = String(formData[item.key] || '');
+
+                const isInvalidEmail = isEmail && value && !isValidEmail(value);
+                const isInvalidPhone = isPhone && value && !isValidPhone(value);
+                const isInvalid = isInvalidEmail || isInvalidPhone;
+
+                return (
+                  <View key={idx} className="mb-4 last:mb-0">
+                    <Text className={`text-[9px] font-bold uppercase tracking-[1.5px] mb-2 ml-1 ${isInvalid ? 'text-red-400' : 'text-gray-300'}`}>
+                      {item.label}
+                    </Text>
+                    <View className={`flex-row items-center bg-gray-50/80 rounded-xl px-4 h-12 ${isInvalid ? 'border border-red-200' : ''}`}>
+                      <Feather
+                        name={item.icon}
+                        size={14}
+                        color={isInvalid ? "#ef4444" : "#D1D5DB"}
+                      />
                       <TextInput
-                        className="flex-1 ml-4 text-sm font-bold text-black"
+                        className="flex-1 ml-3 text-[13px] font-medium text-black"
                         value={value}
                         onChangeText={(t) => {
                           let val = t;
@@ -438,189 +491,179 @@ const ClientDetails = () => {
                         }}
                         keyboardType={item.kb as any || 'default'}
                         maxLength={isPhone ? 8 : undefined}
+                        placeholderTextColor="#D1D5DB"
+                        placeholder={`Enter ${item.label.toLowerCase()}`}
                       />
-                    ) : (
-                      <Text className="flex-1 ml-4 text-sm font-bold text-black">
-                        {client[item.key] || 'Not Provided'}
-                      </Text>
+                    </View>
+                    {isEditing && isInvalidEmail && (
+                      <Text className="text-[9px] text-red-400 font-medium mt-1 ml-1">Invalid email format</Text>
+                    )}
+                    {isEditing && isInvalidPhone && (
+                      <Text className="text-[9px] text-red-400 font-medium mt-1 ml-1">Must be exactly 8 digits</Text>
                     )}
                   </View>
-                  {isEditing && isInvalidEmail && (
-                    <Text className="text-[9px] text-red-500 font-bold mt-1 ml-2 uppercase">Invalid email format</Text>
-                  )}
-                  {isEditing && isInvalidPhone && (
-                    <Text className="text-[9px] text-red-500 font-bold mt-1 ml-2 uppercase">Must be exactly 8 digits</Text>
-                  )}
-                </View>
-              );
-            })}
-          </View>
-
-          {/* ==================== BEHAVIORAL ANALYSIS (Cart + Likes) ==================== */}
-          <View className="px-6 mt-8">
-            <Text className="text-[11px] font-black text-black/20 uppercase tracking-[3px] mb-4 ml-2">
-              Marketplace Interest
-            </Text>
-            <View className="flex-row gap-4 mb-8">
-              <TouchableOpacity
-                onPress={() => {
-                  // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setShowCartModal(true);
-                }}
-                className="flex-1 bg-white p-5 rounded-xl border border-gray-100 shadow-sm items-center"
-              >
-                <View className="w-14 h-14 bg-gray-50 rounded-full items-center justify-center mb-3">
-                  <MaterialCommunityIcons name="shopping-outline" size={30} color="black" />
-                </View>
-                <Text className="text-lg font-black">{cartItems.length}</Text>
-                <Text className="text-[8px] font-bold uppercase opacity-40">Cart Objects</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => {
-                  // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setShowLikesModal(true);
-                }}
-                className="flex-1 bg-white p-5 rounded-xl border border-gray-100 shadow-sm items-center"
-              >
-                <View className="w-14 h-14 bg-rose-50 rounded-full items-center justify-center mb-3">
-                  <MaterialCommunityIcons name="heart-pulse" size={30} color="#f43f5e" />
-                </View>
-                <Text className="text-lg font-black">{likedProducts.length}</Text>
-                <Text className="text-[8px] font-bold uppercase opacity-40">Favorite</Text>
-              </TouchableOpacity>
+                );
+              })}
             </View>
+          )}
+
+          {/* ==================== BEHAVIORAL ANALYSIS ==================== */}
+          <View className="mx-5 mb-5 flex-row gap-3">
+            <TouchableOpacity
+              onPress={() => setShowCartModal(true)}
+              className="flex-1 bg-white p-5 rounded-2xl border border-gray-100/60 items-center"
+            >
+              <View className="w-11 h-11 bg-amber-50 rounded-xl items-center justify-center mb-3">
+                <Feather name="shopping-cart" size={18} color="#d97706" />
+              </View>
+              <Text className="text-lg font-black text-black">{cartItems.length}</Text>
+              <Text className="text-[9px] font-medium uppercase text-gray-300 tracking-wider mt-0.5">Cart Items</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setShowLikesModal(true)}
+              className="flex-1 bg-white p-5 rounded-2xl border border-gray-100/60 items-center"
+            >
+              <View className="w-11 h-11 bg-rose-50 rounded-xl items-center justify-center mb-3">
+                <Feather name="heart" size={18} color="#e11d48" />
+              </View>
+              <Text className="text-lg font-black text-black">{likedProducts.length}</Text>
+              <Text className="text-[9px] font-medium uppercase text-gray-300 tracking-wider mt-0.5">Favorites</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setShowOrdersModal(true)}
+              className="flex-1 bg-white p-5 rounded-2xl border border-gray-100/60 items-center"
+            >
+              <View className="w-11 h-11 bg-blue-50 rounded-xl items-center justify-center mb-3">
+                <Feather name="package" size={18} color="#2563eb" />
+              </View>
+              <Text className="text-lg font-black text-black">{ordersHistory.length}</Text>
+              <Text className="text-[9px] font-medium uppercase text-gray-300 tracking-wider mt-0.5">Orders</Text>
+            </TouchableOpacity>
           </View>
 
-          {/* ==================== ORDER HISTORY (restored + modern card) ==================== */}
-          <View className="mx-6 mb-8 bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-            <View className="flex-row justify-between items-center mb-6">
-              <Text className="text-[11px] font-black text-black/20 uppercase tracking-[2px]">
-                Recent Orders
-              </Text>
-              {ordersHistory.length > 5 && (
+          {/* ==================== ORDER HISTORY ==================== */}
+          <View className="mx-5 mb-5 bg-white rounded-2xl border border-gray-100/60 overflow-hidden">
+            <View className="flex-row justify-between items-center px-6 pt-5 pb-4">
+              <View className="flex-row items-center">
+                <View className="w-1 h-5 bg-black rounded-full mr-3" />
+                <Text className="text-[11px] font-bold uppercase tracking-[2px] text-gray-400">
+                  Recent Orders
+                </Text>
+              </View>
+              {ordersHistory.length > 3 && (
                 <TouchableOpacity
                   onPress={() => setShowOrdersModal(true)}
-                  className="px-3 py-1"
+                  className="bg-gray-50 px-3 py-1.5 rounded-lg"
                 >
-                  <Text className="text-[10px] font-bold text-black">View All</Text>
+                  <Text className="text-[10px] font-bold text-gray-500">View All</Text>
                 </TouchableOpacity>
               )}
             </View>
 
             {ordersHistory.length > 0 ? (
-              ordersHistory.slice(0, 5).map((order, idx) => (
+              ordersHistory.slice(0, 3).map((order, idx) => (
                 <TouchableOpacity
                   key={idx}
                   onPress={() => {
                     setSelectedOrder(order);
                     setIsOrderModalVisible(true);
                   }}
-                  className="flex-row items-center justify-between py-4 border-b border-gray-50 last:border-0"
+                  className="flex-row items-center justify-between px-6 py-4 border-t border-gray-50"
                 >
-                  <View className="flex-row items-center">
-                    <View
-                      className={`w-2 h-2 rounded-full mr-3 ${order.status === 'delivered' ? 'bg-emerald-500' : order.status === 'pending' ? 'bg-amber-500' : 'bg-rose-500'
-                        }`}
-                    />
+                  <View className="flex-row items-center flex-1">
+                    <View className={`w-8 h-8 rounded-lg items-center justify-center mr-3 ${order.status === 'delivered' ? 'bg-emerald-50' : order.status === 'pending' ? 'bg-amber-50' : 'bg-red-50'
+                      }`}>
+                      <Feather
+                        name={order.status === 'delivered' ? 'check-circle' : order.status === 'pending' ? 'clock' : 'x-circle'}
+                        size={14}
+                        color={order.status === 'delivered' ? '#059669' : order.status === 'pending' ? '#d97706' : '#ef4444'}
+                      />
+                    </View>
                     <View>
-                      <Text className="text-xs font-black text-black">
+                      <Text className="text-[13px] font-bold text-black">
                         Order #{order.orderNumber}
                       </Text>
-                      <Text className="text-[9px] text-black/40 font-bold uppercase">
-                        {order.status}
+                      <Text className="text-[10px] text-gray-400 font-medium mt-0.5">
+                        {order.updatedAt ? timeAgo(order.updatedAt) : order.status}
                       </Text>
                     </View>
                   </View>
-                  <View className='flex-row items-center'>
-                    <Text className="text-xs font-black text-emerald-600 mr-2">
-                      {((calcTotalPrice(order) || 0) + (order.shippingCoast || 0)).toFixed(2)} DT
+                  <View className="flex-row items-center">
+                    <Text className="text-[13px] font-bold text-black mr-2">
+                      {((calcTotalPrice(order) || 0) + (order.shippingCoast || 0)).toFixed(0)} DT
                     </Text>
                     <Feather name="chevron-right" size={14} color="#D1D5DB" />
                   </View>
                 </TouchableOpacity>
               ))
             ) : (
-              <Text className="text-xs text-black/30 text-center py-4">No transactions found.</Text>
+              <View className="py-12 items-center border-t border-gray-50">
+                <Text className="text-[11px] text-gray-300 font-medium">No orders yet</Text>
+              </View>
             )}
           </View>
 
-          {/* ==================== AI INTELLIGENCE CARD (premium dark style) ==================== */}
-          <View className="mx-6 mb-8">
+          {/* ==================== AI INTELLIGENCE CARD ==================== */}
+          <View className="mx-5 mb-5">
             <TouchableOpacity
               onPress={() => setShowSummary(true)}
               activeOpacity={0.9}
-              className="bg-black rounded-xl p-8 shadow-2xl"
+              className="bg-black rounded-2xl p-6 overflow-hidden"
             >
-              <View className="flex-row justify-between items-start mb-6">
+              <View className="absolute top-0 right-0 w-32 h-32 bg-white/[0.03] rounded-full -mr-16 -mt-16" />
+
+              <View className="flex-row justify-between items-center mb-4">
                 <View className="flex-row items-center">
-                  <View className="bg-white/10 p-2.5 rounded-xl mr-3">
-                    <MaterialCommunityIcons name="brain" size={20} color="white" />
+                  <View className="bg-white/10 w-9 h-9 rounded-xl items-center justify-center mr-3">
+                    <MaterialCommunityIcons name="brain" size={16} color="white" />
                   </View>
-                  <Text className="text-white font-black text-xs uppercase tracking-[2px]">
+                  <Text className="text-white font-bold text-[11px] uppercase tracking-[1.5px]">
                     AI Briefing
                   </Text>
                 </View>
-                <View className="bg-emerald-500 w-2 h-2 rounded-full shadow-[0_0_10px_#10b981]" />
+                <View className={`w-2 h-2 rounded-full ${chatHistory[0]?.summary ? 'bg-emerald-400' : 'bg-white/20'}`} />
               </View>
 
               <Text
-                className="text-white/70 text-xs leading-6 italic mb-6"
-                numberOfLines={3}
+                className="text-white/50 text-[12px] leading-5 mb-5"
+                numberOfLines={2}
               >
                 {chatHistory[0]?.summary?.replace(/\*+/g, '') ||
-                  'Awaiting intelligence collection from future interactions...'}
+                  'No AI intelligence collected yet. Interactions will build a behavioral profile.'}
               </Text>
 
               <View className="flex-row gap-3">
                 <TouchableOpacity
                   onPress={() => setShowTranscript(true)}
-                  className="flex-1 bg-white/10 h-14 rounded-xl items-center justify-center border border-white/5"
+                  className="flex-1 bg-white/[0.08] h-11 rounded-xl items-center justify-center"
                 >
                   {fetchingChat ? (
                     <ActivityIndicator size="small" color="white" />
                   ) : (
-                    <Text className="text-white font-black text-[10px] uppercase tracking-widest">
-                      Live Logs
+                    <Text className="text-white/70 font-bold text-[10px] uppercase tracking-wider">
+                      Chat Logs
                     </Text>
                   )}
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={() => setShowSummary(true)}
-                  className="flex-1 bg-emerald-500 h-14 rounded-xl items-center justify-center"
+                  className="flex-1 bg-white h-11 rounded-xl items-center justify-center"
                 >
-                  <Text className="text-black font-black text-[10px] uppercase tracking-widest">
+                  <Text className="text-black font-bold text-[10px] uppercase tracking-wider">
                     Full Brief
                   </Text>
                 </TouchableOpacity>
               </View>
             </TouchableOpacity>
           </View>
+
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* ==================== FLOATING BOTTOM ACTIONS (v2 style) ==================== */}
-      {!isEditing && (
-        <View className="absolute bottom-10 left-6 right-6 flex-row gap-4 h-20 items-center px-4 bg-white/80 rounded-xl border border-white/20 shadow-2xl backdrop-blur-md">
-          <TouchableOpacity
-            className="flex-1 h-14 bg-black rounded-xl flex-row items-center justify-center"
-            onPress={() => handleCall(client.phone?.toString() || '')}
-          >
-            <MaterialCommunityIcons name="phone" size={18} color="white" />
-            <Text className="text-white font-black ml-3 uppercase text-[10px] tracking-widest">Call</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="w-14 h-14 bg-emerald-500 rounded-xl items-center justify-center shadow-lg"
-            onPress={() => handleWhatsApp(client.phone?.toString() || '')}
-          >
-            <MaterialCommunityIcons name="whatsapp" size={24} color="white" />
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* ==================== MODALS (kept from v1 + modern rounded styling) ==================== */}
+      {/* ==================== MODALS ==================== */}
 
       {/* AI Summary Modal */}
       <Modal
@@ -629,23 +672,23 @@ const ClientDetails = () => {
         visible={showSummary}
         onRequestClose={() => setShowSummary(false)}
       >
-        <View className="flex-1 bg-black/80 justify-center px-6">
+        <View className="flex-1 bg-black/70 justify-center px-5">
           <View
-            style={{ backgroundColor: colors.light[100] }}
-            className="rounded-xl p-8 max-h-[70%] shadow-2xl"
+            style={{ backgroundColor: '#FAFAFA' }}
+            className="rounded-2xl p-7 max-h-[75%]"
           >
-            <View className="flex-row justify-between items-center mb-8">
+            <View className="flex-row justify-between items-center mb-6">
               <View>
-                <Text className="text-[10px] font-black uppercase tracking-[3px] text-black/20 mb-1">
+                <Text className="text-[10px] font-bold uppercase tracking-[2px] text-gray-300 mb-1">
                   Intelligence
                 </Text>
-                <Text className="text-xl font-black text-black">Briefing</Text>
+                <Text className="text-xl font-black text-black">AI Briefing</Text>
               </View>
               <TouchableOpacity
                 onPress={() => setShowSummary(false)}
-                className="w-10 h-10 bg-gray-50 rounded-xl items-center justify-center border border-gray-100"
+                className="w-10 h-10 bg-gray-100 rounded-xl items-center justify-center"
               >
-                <MaterialCommunityIcons name="close" size={18} color={colors.dark[100]} />
+                <Feather name="x" size={16} color="#1a1a1a" />
               </TouchableOpacity>
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
@@ -655,21 +698,18 @@ const ClientDetails = () => {
                   .map((line: string, i: number) => (
                     <Text
                       key={i}
-                      className="text-gray-600 text-[14px] leading-6 mb-3"
+                      className="text-gray-500 text-[13px] leading-6 mb-2.5"
                     >
                       {line.replace(/\*+/g, '').trim()}
                     </Text>
                   ))
               ) : (
-                <View className="py-20 items-center justify-center">
-                  <View className="w-16 h-16 bg-gray-50 rounded-xl items-center justify-center mb-6">
-                    <MaterialCommunityIcons name="brain" size={30} color={colors.dark[100]} style={{ opacity: 0.1 }} />
+                <View className="py-16 items-center justify-center">
+                  <View className="w-14 h-14 bg-gray-100 rounded-2xl items-center justify-center mb-5">
+                    <MaterialCommunityIcons name="brain" size={24} color={colors.dark[100]} style={{ opacity: 0.15 }} />
                   </View>
-                  <Text className="text-center text-[10px] font-black text-black uppercase tracking-[2px] opacity-40 mb-2">
-                    No dossier yet
-                  </Text>
-                  <Text className="text-center text-[11px] text-gray-400 font-bold px-6 leading-5">
-                    The AI has not yet collected enough data to generate a behavioral summary for this client.
+                  <Text className="text-center text-gray-300 text-[11px] font-medium px-8 leading-5">
+                    The AI hasn't collected enough data to generate a behavioral summary for this client yet.
                   </Text>
                 </View>
               )}
@@ -692,26 +732,26 @@ const ClientDetails = () => {
         visible={showCartModal}
         onRequestClose={() => setShowCartModal(false)}
       >
-        <View className="flex-1 bg-black/80 justify-end">
+        <View className="flex-1 bg-black/60 justify-end">
           <View
-            style={{ backgroundColor: colors.light[100] }}
-            className="rounded-t-xl h-[70%] p-8"
+            style={{ backgroundColor: '#FAFAFA' }}
+            className="rounded-t-2xl h-[70%] p-6"
           >
-            <View className="flex-row justify-between items-center mb-10">
+            <View className="flex-row justify-between items-center mb-6">
               <View>
-                <Text className="text-[10px] font-black uppercase tracking-[3px] text-black/20 mb-1">
+                <Text className="text-[10px] font-bold uppercase tracking-[2px] text-gray-300 mb-1">
                   Active Interest
                 </Text>
                 <Text className="text-xl font-black text-black">Cart Items</Text>
               </View>
               <TouchableOpacity
                 onPress={() => setShowCartModal(false)}
-                className="w-12 h-12 bg-gray-50 rounded-xl items-center justify-center border border-gray-100"
+                className="w-10 h-10 bg-gray-100 rounded-xl items-center justify-center"
               >
-                <MaterialCommunityIcons name="close" size={20} color={colors.dark[100]} />
+                <Feather name="x" size={16} color="#1a1a1a" />
               </TouchableOpacity>
             </View>
-            {renderProductList(cartItems, 'The client selection is empty', true)}
+            {renderProductList(cartItems, 'The client cart is empty', true)}
           </View>
         </View>
       </Modal>
@@ -723,23 +763,23 @@ const ClientDetails = () => {
         visible={showLikesModal}
         onRequestClose={() => setShowLikesModal(false)}
       >
-        <View className="flex-1 bg-black/80 justify-end">
+        <View className="flex-1 bg-black/60 justify-end">
           <View
-            style={{ backgroundColor: colors.light[100] }}
-            className="rounded-t-xl h-[70%] p-8"
+            style={{ backgroundColor: '#FAFAFA' }}
+            className="rounded-t-2xl h-[70%] p-6"
           >
-            <View className="flex-row justify-between items-center mb-10">
+            <View className="flex-row justify-between items-center mb-6">
               <View>
-                <Text className="text-[10px] font-black uppercase tracking-[3px] text-black/20 mb-1">
-                  Interest List
+                <Text className="text-[10px] font-bold uppercase tracking-[2px] text-gray-300 mb-1">
+                  Saved Items
                 </Text>
                 <Text className="text-xl font-black text-black">Favorites</Text>
               </View>
               <TouchableOpacity
                 onPress={() => setShowLikesModal(false)}
-                className="w-12 h-12 bg-gray-50 rounded-xl items-center justify-center border border-gray-100"
+                className="w-10 h-10 bg-gray-100 rounded-xl items-center justify-center"
               >
-                <MaterialCommunityIcons name="close" size={20} color={colors.dark[100]} />
+                <Feather name="x" size={16} color="#1a1a1a" />
               </TouchableOpacity>
             </View>
             {renderProductList(likedProducts, 'No saved items in Favorites')}
@@ -754,23 +794,23 @@ const ClientDetails = () => {
         visible={showOrdersModal}
         onRequestClose={() => setShowOrdersModal(false)}
       >
-        <View className="flex-1 bg-black/80 justify-end">
+        <View className="flex-1 bg-black/60 justify-end">
           <View
-            style={{ backgroundColor: colors.light[100] }}
-            className="rounded-t-xl h-[70%] p-8"
+            style={{ backgroundColor: '#FAFAFA' }}
+            className="rounded-t-2xl h-[75%] p-6"
           >
-            <View className="flex-row justify-between items-center mb-10">
+            <View className="flex-row justify-between items-center mb-6">
               <View>
-                <Text className="text-[10px] font-black uppercase tracking-[3px] text-black/20 mb-1">
-                  Ledger History
+                <Text className="text-[10px] font-bold uppercase tracking-[2px] text-gray-300 mb-1">
+                  Full History
                 </Text>
-                <Text className="text-xl font-black text-black">Transaction Logs</Text>
+                <Text className="text-xl font-black text-black">All Orders</Text>
               </View>
               <TouchableOpacity
                 onPress={() => setShowOrdersModal(false)}
-                className="w-12 h-12 bg-gray-50 rounded-xl items-center justify-center border border-gray-100"
+                className="w-10 h-10 bg-gray-100 rounded-xl items-center justify-center"
               >
-                <MaterialCommunityIcons name="close" size={20} color={colors.dark[100]} />
+                <Feather name="x" size={16} color="#1a1a1a" />
               </TouchableOpacity>
             </View>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
@@ -782,37 +822,41 @@ const ClientDetails = () => {
                       setSelectedOrder(order);
                       setIsOrderModalVisible(true);
                     }}
-                    className="flex-row items-center justify-between p-5 mb-4 bg-gray-50 rounded-xl border border-gray-100"
+                    className="flex-row items-center justify-between p-4 mb-3 bg-white rounded-2xl border border-gray-100/60"
                   >
-                    <View className="flex-row items-center">
-                      <View className={`w-2 h-2 rounded-full mr-4 ${order.status === 'delivered' ? 'bg-emerald-500' : order.status === 'pending' ? 'bg-amber-500' : 'bg-rose-500'}`} />
+                    <View className="flex-row items-center flex-1">
+                      <View className={`w-9 h-9 rounded-lg items-center justify-center mr-3 ${order.status === 'delivered' ? 'bg-emerald-50' : order.status === 'pending' ? 'bg-amber-50' : 'bg-red-50'
+                        }`}>
+                        <Feather
+                          name={order.status === 'delivered' ? 'check-circle' : order.status === 'pending' ? 'clock' : 'x-circle'}
+                          size={15}
+                          color={order.status === 'delivered' ? '#059669' : order.status === 'pending' ? '#d97706' : '#ef4444'}
+                        />
+                      </View>
                       <View>
-                        <Text className="text-sm font-black text-black">
-                          Dossier #{order.orderNumber}
+                        <Text className="text-[13px] font-bold text-black">
+                          Order #{order.orderNumber}
                         </Text>
-                        <Text className="text-[10px] text-black/40 font-bold uppercase tracking-wider">
-                          Status: {order.status}
+                        <Text className="text-[10px] text-gray-400 font-medium mt-0.5">
+                          {order.updatedAt ? timeAgo(order.updatedAt) : order.status}
                         </Text>
                       </View>
                     </View>
                     <View className='flex-row items-center'>
-                      <Text className="text-xs font-black text-emerald-600 mr-3">
-                        {((calcTotalPrice(order) || 0) + (order.shippingCoast || 0)).toFixed(2)} DT
+                      <Text className="text-[13px] font-bold text-black mr-2">
+                        {((calcTotalPrice(order) || 0) + (order.shippingCoast || 0)).toFixed(0)} DT
                       </Text>
-                      <Feather name="chevron-right" size={16} color="#D1D5DB" />
+                      <Feather name="chevron-right" size={14} color="#D1D5DB" />
                     </View>
                   </TouchableOpacity>
                 ))
               ) : (
-                <View className="py-20 items-center justify-center">
-                  <View className="w-16 h-16 bg-gray-50 rounded-xl items-center justify-center mb-6">
-                    <MaterialCommunityIcons name="package-variant-closed" size={30} color={colors.dark[100]} style={{ opacity: 0.1 }} />
+                <View className="py-16 items-center justify-center">
+                  <View className="w-14 h-14 bg-gray-100 rounded-2xl items-center justify-center mb-5">
+                    <Feather name="package" size={22} color={colors.dark[100]} style={{ opacity: 0.15 }} />
                   </View>
-                  <Text className="text-center text-[10px] font-black text-black uppercase tracking-[2px] opacity-40 mb-2">
-                    Clean Slate
-                  </Text>
-                  <Text className="text-center text-[11px] text-gray-400 font-bold px-6 leading-5">
-                    There are no recorded transactions associated with this client profile.
+                  <Text className="text-center text-gray-300 text-[11px] font-medium px-8 leading-5">
+                    No orders recorded for this client.
                   </Text>
                 </View>
               )}

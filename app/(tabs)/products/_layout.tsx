@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 
 import { colors, icons } from '@/constants';
@@ -19,9 +19,19 @@ import { X } from 'lucide-react-native';
 
 export default function TabLayout() {
     // const colorScheme = useColorScheme();
+    const { tab } = useLocalSearchParams<{ tab: string }>();
 
     const Tab = createMaterialTopTabNavigator();
-    const [activePage, setActivePage] = useState<"products" | "collections">("products");
+    const [activePage, setActivePage] = useState<"products" | "collections">(tab === "collections" ? "collections" : "products");
+    
+    // Sync the active page if the tab URL parameter changes
+    React.useEffect(() => {
+        if (tab === "collections") {
+            setActivePage("collections");
+        } else {
+            setActivePage("products");
+        }
+    }, [tab]);
     const [searchBarActive, setSearchBarActive] = useState<boolean>(false);
     const [hiddenModalActive, setHiddenModalActive] = useState<boolean>(false);
     const [productsSelected, setProductsSelected] = useState<string[]>([]);
@@ -82,6 +92,8 @@ export default function TabLayout() {
             </View>
 
             <Tab.Navigator
+                key={tab === "collections" ? "collections" : "products"}
+                initialRouteName={tab === "collections" ? "Collections" : "Products"}
                 screenListeners={{
                     state: (e) => {
                         const routeName = e.data.state.routes[e.data.state.index].name;
